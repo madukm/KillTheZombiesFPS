@@ -1,4 +1,4 @@
-#include <logger.hpp>
+#include "../shared/log/logger.hpp"
 
 // Fibonacci series
 long fibonacci(unsigned n) 
@@ -10,21 +10,14 @@ long fibonacci(unsigned n)
 int main()
 {
     char buf[256];
-    logger a_logger;
+    logger::logger a_logger(std::string("Fibonacci"));
     
-    for (int i = 0 ; i < 30 ; i++)
+    for (int i = 0 ; i < 42 ; i++)
     {
-        snprintf(buf, 256, "%d", fibonacci(i));
-        a_logger << std::string(buf);
+        snprintf(buf, 256, "%ld", fibonacci(i));
+        a_logger.log(buf, logger::log_type::NORM);
     }
     
     return 0;
 }
 
-/*
-// C++ program to illustrate time point 
-// and system clock functions 
-#include <iostream> 
-#include <chrono> 
-#include <ctime> 
-*/
