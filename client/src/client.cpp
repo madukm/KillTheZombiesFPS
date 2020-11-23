@@ -42,7 +42,7 @@ int main()
 {
     std::cout << "Client init!\n";
     Client game_client;
-    ClientConnector connector(game_client.state);
+    ClientConnector connector(game_client.state, 42069, "127.0.0.1");
 
     std::thread update_thread(&ClientConnector::update, &connector);
 
