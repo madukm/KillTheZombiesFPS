@@ -7,6 +7,7 @@
 #include <arpa/inet.h> 
 #include <netinet/in.h> 
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <netdb.h>
 #include <errno.h>
 #include "../client/src/gamestate.hpp"
@@ -28,8 +29,21 @@ class ServerConnector
 			exit(1);
 		}	
 		serveraddr.sin_family = AF_INET;
-		serveraddr.sin_port = port;
+		serveraddr.sin_port = htons(port);
     	serveraddr.sin_addr.s_addr = INADDR_ANY;
+
+        if(bind(sd, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)
+        {
+        	printf("bind()");
+        	exit(2);
+        }
+        
+        unsigned int namelen;
+        namelen = sizeof(serveraddr);
+        if(getsockname(sd, (struct sockaddr *) &serveraddr, &namelen) < 0){
+        	printf("getsockname()");
+        	exit(3);
+        }			
 	}
 	
 	~ServerConnector()
@@ -39,6 +53,8 @@ class ServerConnector
 
     void update()
     {
+        int temp; //JUST A TEMPORARY VALUE
+
         //Get info and update state.
         
         while (true)
@@ -46,21 +62,8 @@ class ServerConnector
             update_state.bodies[0].temp += 1; 
 
             //Create udp connection.
-			
-			if(bind(sd, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)
-			{
-				printf("bind()");
-				exit(2);
-			}
 
-			unsigned int namelen;
-			namelen = sizeof(serveraddr);
-			if(getsockname(sd, (struct sockaddr *) &serveraddr, &namelen) < 0){
-				printf("getsockname()");
-				exit(3);
-			}
-			
-			printf("Port assigned is %d\n", ntohs(serveraddr.sin_port));
+			printf("Port assigned is %u\n", ntohs(serveraddr.sin_port));
 			unsigned int client_addr_size = sizeof(clientaddr);
 			//Connect
 			if(recvfrom(sd, buffer, 30, 0, (struct sockaddr *) &clientaddr, &client_addr_size) < 0)
@@ -72,6 +75,17 @@ class ServerConnector
 				   	(clientaddr.sin_family == AF_INET?"AF_INET":"UNKNOWN"),
        				ntohs(clientaddr.sin_port),
        				inet_ntoa(clientaddr.sin_addr));
+
+            sscanf(buffer, "%d", &temp); //json-string -> object
+            temp++;
+            snprintf(buffer, 30, "%d", temp); //object -> json-string
+
+            if(sendto(sd, (const char *)buffer, 30, MSG_CONFIRM, (const struct sockaddr *) &clientaddr, client_addr_size) < 0)
+            {
+                   printf("cliente faiou!\n");
+                   exit(4);
+            }
+
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         }

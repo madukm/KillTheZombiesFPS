@@ -44,7 +44,7 @@ class ClientConnector
         
         while (true)
         {
-    		update_state.bodies[0].temp += 1; 
+    		//update_state.bodies[0].temp += 1; 
         	
 			snprintf(buffer, 30, "%d", update_state.bodies[0].temp);
 

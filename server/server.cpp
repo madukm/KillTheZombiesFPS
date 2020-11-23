@@ -34,5 +34,10 @@ int main()
    	 
     std::thread update_thread(&ServerConnector::update, &connector);
 
+    while(1)
+    {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
 	return 0;
 }
