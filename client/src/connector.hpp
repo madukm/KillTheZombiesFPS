@@ -45,7 +45,9 @@ class ClientConnector
         while (true)
         {
     		//update_state.bodies[0].temp += 1; 
-        	
+
+			int temp; 
+
 			snprintf(buffer, 30, "%d", update_state.bodies[0].temp);
 
 			if(sendto(sd, buffer, 30, 0, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
@@ -53,7 +55,19 @@ class ClientConnector
 				printf("sendto()");
 				exit(2);
 			}
-	
+			
+			unsigned int server_addr_size = sizeof(serveraddr);
+			if(recvfrom(sd, buffer, 30, 0, (struct sockaddr *)&serveraddr, &server_addr_size) < 0)
+			{
+				printf("recvfrom()");
+				exit(4);
+			}
+
+			printf("Received message %s from domain %s port %d internet address %s\n", buffer,
+				  (serveraddr.sin_family == AF_INET?"AF_INET":"UNKNOWN"),
+				  ntohs(serveraddr.sin_port),
+				  inet_ntoa(serveraddr.sin_addr));
+			sscanf(buffer, "%d", &update_state.bodies[0].temp);
             //Create udp connection.
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 

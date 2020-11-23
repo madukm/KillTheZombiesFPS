@@ -80,7 +80,7 @@ class ServerConnector
             temp++;
             snprintf(buffer, 30, "%d", temp); //object -> json-string
 
-            if(sendto(sd, (const char *)buffer, 30, MSG_CONFIRM, (const struct sockaddr *) &clientaddr, client_addr_size) < 0)
+            if(sendto(sd, (const char *)buffer, 30, 0, (const struct sockaddr *) &clientaddr, client_addr_size) < 0)
             {
                    printf("cliente faiou!\n");
                    exit(4);
