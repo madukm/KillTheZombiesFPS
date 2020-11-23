@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -rdynamic CMakeFiles/KillTheZombiesFPS.dir/client.cpp.o -o ../bin/KillTheZombiesFPS  ../../vcpkg.linux/installed/x64-linux/lib/libGLEW.a ../../vcpkg.linux/installed/x64-linux/lib/libglfw3.a -lGL -lGLU -lrt -lm -ldl -lX11 -lpthread 

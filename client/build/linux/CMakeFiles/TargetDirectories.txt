@@ -1,0 +1,5 @@
+/home/hiram/Workspace/KillTheZombiesFPS/client/build/linux/CMakeFiles/rebuild_cache.dir
+/home/hiram/Workspace/KillTheZombiesFPS/client/build/linux/CMakeFiles/edit_cache.dir
+/home/hiram/Workspace/KillTheZombiesFPS/client/build/linux/src/CMakeFiles/rebuild_cache.dir
+/home/hiram/Workspace/KillTheZombiesFPS/client/build/linux/src/CMakeFiles/edit_cache.dir
+/home/hiram/Workspace/KillTheZombiesFPS/client/build/linux/src/CMakeFiles/KillTheZombiesFPS.dir
