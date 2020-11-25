@@ -37,6 +37,13 @@ class GameState
         bodies.push_back(temp);
     }
 
+    /* something like that?
+    static GameState fromJson(char* buffer)
+    {
+
+    }
+    */
+
     std::vector<GameObj> bodies; //To be rendered.
 };
 

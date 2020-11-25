@@ -5,8 +5,10 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <atomic>
-#include "connector.hpp"
-#include "../client/src/gamestate.hpp"
+
+//game
+#include "serverconnector.hpp"
+#include "../../shared/gamestate.hpp"
 
 //SOCKET UDP:
 //int sd;

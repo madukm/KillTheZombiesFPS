@@ -2,9 +2,11 @@
 #include <chrono>
 #include <thread>
 
+#include <mutex>
+
 //#include "window.hpp"
-#include "connector.hpp"
-#include "gamestate.hpp"
+#include "clientconnector.hpp"
+#include "../../shared/gamestate.hpp" //TODO add in cmake to include <gamestate.hpp>
 #include "../../shared/semaphore.hpp"
 
 #define MOVE_RATE 1
@@ -14,11 +16,22 @@ class Client
     public:
     GameState state;
     GameObj player;
-    Semaphore &state_semaphore;
+    std::mutex mutx;
 
-    Client(Semaphore &_state_sem)
-    : state_semaphore(_state_sem)
-    {}
+    ClientConnector connector;
+    
+    std::thread update_thread;
+
+    Client() 
+    : connector (ClientConnector(state, 42069, "127.0.0.1", mutx))
+    {
+        update_thread = std::thread(&ClientConnector::update, &connector);
+    }
+
+    ~Client() //Join threads.
+    {
+
+    }
 
     /*
     onKeyPressed() //Qualquer coisa 
@@ -39,13 +52,17 @@ class Client
         while(true)
         {
             printf("AA\n");
-            state_semaphore.down();
-            for (auto &body : state.bodies)
+            //state_semaphore.down();
+            mutx.lock();
+            for (GameObj &body : state.bodies)
             {
+                printf("body before: %d\n", body.temp);
                 body.temp++;
-                printf("body: %d\n", body.temp);
+                printf("body after: %d\n", body.temp);
             }
-            state_semaphore.up();
+            //state_semaphore.up();
+            mutx.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     }
 };
@@ -53,18 +70,16 @@ class Client
 //Client main. Should ask for server info and send info.
 int main()
 {
-    Semaphore sem(1);
+    //Semaphore sem(1);
 
     std::cout << "Client init!\n";
-    Client game_client(sem);
-    ClientConnector connector(game_client.state, 42069, "127.0.0.1", sem);
+    Client game_client;
 
-    std::thread update_thread(&ClientConnector::update, &connector);
     std::thread client_thread(&Client::onDraw, &game_client);
 
     while (1)
     {
-        //std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
     return 0;

@@ -7,8 +7,10 @@
 #include <netdb.h>
 #include <unistd.h>
 
+#include <mutex>
+
 //Game
-#include "gamestate.hpp"
+#include "../../shared/gamestate.hpp"
 #include "../../shared/semaphore.hpp"
 
 //Connects client to server.
@@ -19,10 +21,12 @@ class ClientConnector
 	char buffer[30];
 	struct sockaddr_in serveraddr;
 	GameState &update_state; //critical region
-    Semaphore &state_semaphore; //Semaphore for critical region.
+    //Semaphore &state_semaphore; //Semaphore for critical region.
 
-    ClientConnector(GameState &state, unsigned short port, std::string address, Semaphore &_state_sem) 
-    : update_state(state), state_semaphore(_state_sem)
+    std::mutex &mutx;
+
+    ClientConnector(GameState &state, unsigned short port, std::string address, std::mutex &_mutx) 
+    : update_state(state), mutx(_mutx)
     {
 		unsigned short _port = htons(port);
 		if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
@@ -50,7 +54,8 @@ class ClientConnector
 
 			int temp; 
 
-            state_semaphore.down();
+            //state_semaphore.down();
+            mutx.lock();
 
 			snprintf(buffer, 30, "%d", update_state.bodies[0].temp);
 
@@ -74,9 +79,11 @@ class ClientConnector
 			sscanf(buffer, "%d", &update_state.bodies[0].temp);
             //Create udp connection.
 
-			//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-            state_semaphore.up();
+            //state_semaphore.up();
+            mutx.unlock();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
 };
