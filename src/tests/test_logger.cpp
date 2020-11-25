@@ -10,9 +10,9 @@ long fibonacci(unsigned n)
 int main()
 {
     char buf[256];
-    logger::logger a_logger(std::string("Fibonacci"));
+    logger::logger a_logger(std::string("Fib"));
     
-    for (int i = 0 ; i < 42 ; i++)
+    for (int i = 0 ; i < 50 ; i++)
     {
         snprintf(buf, 256, "%ld", fibonacci(i));
         a_logger.log(buf, logger::log_type::NORM);

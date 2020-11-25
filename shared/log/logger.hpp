@@ -14,6 +14,9 @@ namespace logger
     class logger
     {
         public:
+        inline static std::chrono::time_point<std::chrono::system_clock> start;
+        
+        public:
         
         logger(std::string logger_name)
         {
@@ -81,8 +84,5 @@ namespace logger
         }
         
         std::string name;
-        std::chrono::time_point<std::chrono::system_clock> start;
     };
-    
 }
-
