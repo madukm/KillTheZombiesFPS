@@ -71,11 +71,12 @@ class ServerConnector
 				printf("recvfrom()");
 				exit(4);
 			}
+            
 			printf("Received message %s from domain %s port %d internet address %s\n", buffer,
 				   	(clientaddr.sin_family == AF_INET?"AF_INET":"UNKNOWN"),
        				ntohs(clientaddr.sin_port),
        				inet_ntoa(clientaddr.sin_addr));
-
+            
             sscanf(buffer, "%d", &temp); //json-string -> object
             temp++;
             snprintf(buffer, 30, "%d", temp); //object -> json-string
