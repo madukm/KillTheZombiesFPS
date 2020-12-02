@@ -19,7 +19,6 @@ class Client
     std::mutex mutx;
 
     ClientConnector connector;
-    
     std::thread update_thread;
 
     Client() 
@@ -44,25 +43,16 @@ class Client
             case "A": player.x -= MOVE_RATE;
             case "D": player.x += MOVE_RATE;
         }
-    }
-    */
+    }*/
 
     void onDraw()
     {
         while(true)
         {
-            printf("AA\n");
-            //state_semaphore.down();
             mutx.lock();
-            for (GameObj &body : state.bodies)
-            {
-                printf("body before: %d\n", body.temp);
-                body.temp++;
-                printf("body after: %d\n", body.temp);
-            }
-            //state_semaphore.up();
+            state.a += 10;
             mutx.unlock();
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            //std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     }
 };

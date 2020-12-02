@@ -12,31 +12,44 @@
 //Game
 #include "../../shared/gamestate.hpp"
 #include "../../shared/semaphore.hpp"
+#include "../../shared/json.hpp"
+
+using json = nlohmann::json; 
 
 //Connects client to server.
 class ClientConnector
 {
     public:
 	int sd;
-	char buffer[30];
 	struct sockaddr_in serveraddr;
 	GameState &update_state; //critical region
     //Semaphore &state_semaphore; //Semaphore for critical region.
 
     std::mutex &mutx;
 
+    char *update_buffer;
+
     ClientConnector(GameState &state, unsigned short port, std::string address, std::mutex &_mutx) 
     : update_state(state), mutx(_mutx)
     {
 		unsigned short _port = htons(port);
-		if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+		if((sd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		{
 			printf("socket()");
 			exit(1);
-		}	
+		}
+
 		serveraddr.sin_family = AF_INET;
 		serveraddr.sin_port = _port;
     	serveraddr.sin_addr.s_addr = inet_addr(address.c_str());
+
+        if (connect(sd, (struct sockaddr*)&serveraddr, sizeof(serveraddr) != 0))
+        {
+            printf("Problem in tcp!\n");
+        }
+        //should throw an exception...
+        //
+        update_buffer = new char[GameState::buf_size];
 	}
 	
 	~ClientConnector()
@@ -47,40 +60,17 @@ class ClientConnector
     void update()
     {
         //Get info and update state.
-        
+        json game_state_json;
+
         while (true)
         {
-    		//update_state.bodies[0].temp += 1; 
+            memset(update_buffer, 0, GameState::buf_size);
+            //TODO add logger messages here.
 
-			int temp; 
-
-            //state_semaphore.down();
             mutx.lock();
+            game_state_json = update_state.to_json(); //Must be in lock before reading and sending to server.
+            //strcpy(update_buffer, game_state_json.dump(), );
 
-			snprintf(buffer, 30, "%d", update_state.bodies[0].temp);
-
-			if(sendto(sd, buffer, 30, 0, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)
-			{
-				printf("sendto()");
-				exit(2);
-			}
-			
-			unsigned int server_addr_size = sizeof(serveraddr);
-			if(recvfrom(sd, buffer, 30, 0, (struct sockaddr *)&serveraddr, &server_addr_size) < 0)
-			{
-				printf("recvfrom()");
-				exit(4);
-			}
-
-			printf("Received message %s from domain %s port %d internet address %s\n", buffer,
-				  (serveraddr.sin_family == AF_INET?"AF_INET":"UNKNOWN"),
-				  ntohs(serveraddr.sin_port),
-				  inet_ntoa(serveraddr.sin_addr));
-			sscanf(buffer, "%d", &update_state.bodies[0].temp);
-            //Create udp connection.
-
-
-            //state_semaphore.up();
             mutx.unlock();
 
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));

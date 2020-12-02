@@ -13,91 +13,59 @@
 
 #include "../../shared/gamestate.hpp"
 
+/* This class represents an active client
+ * to the server perspective.
+ * Receives a file descriptor, accepted by the server
+ * and initializes a thread.
+ * 
+ */
+
 class ServerConnector
 {
 	public:
-	int sd;
-	char buffer[30];
-	struct sockaddr_in clientaddr, serveraddr;
-    GameState &update_state;
 
-	ServerConnector(GameState &state, unsigned short port) 
-    : update_state(state)
+    ServerConnector(GameState &_update_state, int _socket) 
+    : socket(_socket), update_state(_update_state)
     {
-		if((sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-		{
-			printf("socket()");
-			exit(1);
-		}	
-		serveraddr.sin_family = AF_INET;
-		serveraddr.sin_port = htons(port);
-    	serveraddr.sin_addr.s_addr = INADDR_ANY;
-
-        if(bind(sd, (struct sockaddr *) &serveraddr, sizeof(serveraddr)) < 0)
-        {
-        	printf("bind()");
-        	exit(2);
-        }
-        
-        unsigned int namelen;
-        namelen = sizeof(serveraddr);
-        if(getsockname(sd, (struct sockaddr *) &serveraddr, &namelen) < 0){
-        	printf("getsockname()");
-        	exit(3);
-        }			
-	}
+        update_buf = new char[GameState::buf_size];
+    }
 	
 	~ServerConnector()
 	{
-		close(sd);
+		close(socket);
+        delete update_buf;
+        //TODO join thread.
 	}
 
     void update()
     {
-        //TODO put such information on logger.
-		printf("Port assigned is %u\n", ntohs(serveraddr.sin_port));
-        //Get info and update state.
-        
+        GameState received_state;
+
         while (true)
         {
-            //Create udp connection.
-			unsigned int client_addr_size = sizeof(clientaddr);
-			//Connect
-			if(recvfrom(sd, buffer, 30, 0, (struct sockaddr *) &clientaddr, &client_addr_size) < 0)
-			{
-				printf("recvfrom()");
-				exit(4);
-			}
+            //Lock state mutex.
+
+            //Receive state.
+            recv(socket, update_buf, GameState::buf_size, 0);
+            received_state = GameState::from_json(json::parse(update_buf));
+
+            //Do some processing.
+            received_state.a += 1000;
+            strncpy(update_buf, received_state.to_json().dump().c_str(), GameState::buf_size-1);
+
+            //Unlock state mutex.
             
-			printf("Received message %s from domain %s port %d internet address %s\n", buffer,
-				   	(clientaddr.sin_family == AF_INET?"AF_INET":"UNKNOWN"),
-       				ntohs(clientaddr.sin_port),
-       				inet_ntoa(clientaddr.sin_addr));
-           
-            //TODO work with json parsing from this point.
-            
-            int temp;
-
-            sscanf(buffer, "%d", &temp); //json-string -> object
-            
-            printf("b4 value on body: %d\n", update_state.bodies[0].temp);
-            update_state.bodies[0].temp = temp; 
-            update_state.bodies[0].temp += 55; 
-            printf("after value on body: %d\n", update_state.bodies[0].temp);
-
-            temp = update_state.bodies[0].temp; 
-            
-            snprintf(buffer, 30, "%d", temp); //object -> json-string
-
-            if(sendto(sd, (const char *)buffer, 30, 0, (const struct sockaddr *) &clientaddr, client_addr_size) < 0)
-            {
-                   printf("cliente faiou!\n");
-                   exit(4);
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
+            //Send state.
+            send(socket, update_buf, GameState::buf_size, 0);
         }
     }
 
+    public:
+	int socket; //socket descriptor
+    GameState &update_state; //Game reference
+    std::thread update_thread; //TODO initialize
+
+    private:
+
+    char *update_buf;
 };
