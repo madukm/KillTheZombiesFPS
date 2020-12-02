@@ -13,8 +13,10 @@
 #include "../../shared/gamestate.hpp"
 #include "../../shared/semaphore.hpp"
 #include "../../shared/json.hpp"
+#include "../../shared/logger.hpp"
 
 using json = nlohmann::json; 
+logger::logger client_connector_logger("clientconnector.hpp");
 
 //Connects client to server.
 class ClientConnector
@@ -45,7 +47,7 @@ class ClientConnector
 
         if (connect(sd, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) != 0)
         {
-            printf("Problem in tcp!\n");
+            client_connector_logger.log("Problem in tcp!", logger::log_type::WARN);
         }
         //should throw an exception...
         //
@@ -65,8 +67,6 @@ class ClientConnector
         while (true)
         {
             memset(update_buffer, 0, GameState::buf_size);
-            //TODO add logger messages here.
-
             mutx.lock();
 
             game_state_json = update_state.to_json(); //Must be in lock before reading and sending to server.
@@ -75,7 +75,7 @@ class ClientConnector
             //Send over tcp.
             //send(sd, update_buffer, GameState::buf_size, 0);
             write(sd, update_buffer, GameState::buf_size); 
-            printf("Client >> Sent data!\n");
+            client_connector_logger.log("Sent data!", logger::log_type::DEBUG);
 
             //Receive updated values from server.
             //In this implementation, server is always right. (i suppose)
@@ -84,9 +84,9 @@ class ClientConnector
 
             GameState received_state = GameState::from_json(json::parse(update_buffer));
 
-            printf("Client >> : %d\n", received_state.a);
+            //printf("Client >> : %d\n", received_state.a);
+            client_connector_logger.log("Received state", logger::log_type::DEBUG);
             update_state.a = received_state.a; //bem porquinho por enquanto.
-
 
             mutx.unlock();
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));

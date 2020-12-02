@@ -1,14 +1,22 @@
+#ifndef LOGGER_HIRAM_H
+#define LOGGER_HIRAM_H
+
 #include <iostream>
 #include <cstdio>
 #include <chrono>
+
+/* Logger class so we have some beautiful output to the terminal.
+ * TODO add printf-like arguments.
+ * */
 
 namespace logger
 {
     enum log_type
     {
-        NORM,
+        INFO,
         WARN,
-        DEBUG
+        DEBUG,
+        NONE
     };
     
     class logger
@@ -64,7 +72,7 @@ namespace logger
         {
             switch(t)
             {
-                case NORM:
+                case INFO:
                 printf("\033[36m");
                 break;
                 
@@ -86,3 +94,6 @@ namespace logger
         std::string name;
     };
 }
+
+#endif
+

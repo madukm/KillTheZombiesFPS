@@ -8,8 +8,11 @@
 #include "clientconnector.hpp"
 #include "../../shared/gamestate.hpp" //TODO add in cmake to include <gamestate.hpp>
 #include "../../shared/semaphore.hpp"
+#include "../../shared/logger.hpp"
 
 #define MOVE_RATE 1
+
+logger::logger client_log("client.cpp");
 
 class Client
 {
@@ -50,7 +53,8 @@ class Client
         while(true)
         {
             mutx.lock();
-            printf("Ondraw %d\n", state.a);
+            client_log.log("Ondraw", logger::log_type::DEBUG);
+            //printf("Ondraw %d\n", state.a);
             state.a += 10;
             mutx.unlock();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -63,7 +67,7 @@ int main()
 {
     //Semaphore sem(1);
 
-    std::cout << "Client init!\n";
+    client_log.log("Started!", logger::log_type::INFO);
     Client game_client;
 
     std::thread client_thread(&Client::onDraw, &game_client);
