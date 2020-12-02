@@ -19,13 +19,14 @@ class Client
     public:
     GameState state;
     GameObj player;
-    std::mutex mutx;
+	std::mutex mutx;
+	Semaphore sem;
 
     ClientConnector connector;
     std::thread update_thread;
 
-    Client() 
-    : connector (ClientConnector(state, 42069, "127.0.0.1", mutx))
+    Client()
+    : sem(1), connector (ClientConnector(state, 42069, "127.0.0.1", sem))
     {
         update_thread = std::thread(&ClientConnector::update, &connector);
     }
@@ -52,11 +53,16 @@ class Client
     {
         while(true)
         {
+<<<<<<< Updated upstream
             mutx.lock();
             client_log.log("Ondraw", logger::log_type::DEBUG);
             //printf("Ondraw %d\n", state.a);
+=======
+            sem.down();
+            printf("Ondraw %d\n", state.a);
+>>>>>>> Stashed changes
             state.a += 10;
-            mutx.unlock();
+            sem.up();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
