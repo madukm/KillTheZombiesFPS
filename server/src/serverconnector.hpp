@@ -16,8 +16,7 @@
 /* This class represents an active client
  * to the server perspective.
  * Receives a file descriptor, accepted by the server
- * and initializes a thread.
- * 
+ * and initializes a thread. 
  */
 
 class ServerConnector
@@ -28,6 +27,7 @@ class ServerConnector
     : socket(_socket), update_state(_update_state)
     {
         update_buf = new char[GameState::buf_size];
+        update_thread = std::thread(&ServerConnector::update, this);
     }
 	
 	~ServerConnector()
@@ -41,12 +41,17 @@ class ServerConnector
     {
         GameState received_state;
 
+        printf("Server update started\n");
+
         while (true)
         {
             //Lock state mutex.
 
             //Receive state.
-            recv(socket, update_buf, GameState::buf_size, 0);
+            //recv(socket, update_buf, GameState::buf_size, 0);
+            read(socket, update_buf, GameState::buf_size);
+            printf("%s\n", update_buf);
+
             received_state = GameState::from_json(json::parse(update_buf));
 
             //Do some processing.
@@ -56,7 +61,8 @@ class ServerConnector
             //Unlock state mutex.
             
             //Send state.
-            send(socket, update_buf, GameState::buf_size, 0);
+            //send(socket, update_buf, GameState::buf_size, 0);
+            write(socket, update_buf, GameState::buf_size);
         }
     }
 

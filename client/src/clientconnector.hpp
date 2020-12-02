@@ -43,7 +43,7 @@ class ClientConnector
 		serveraddr.sin_port = _port;
     	serveraddr.sin_addr.s_addr = inet_addr(address.c_str());
 
-        if (connect(sd, (struct sockaddr*)&serveraddr, sizeof(serveraddr) != 0))
+        if (connect(sd, (struct sockaddr*)&serveraddr, sizeof(serveraddr)) != 0)
         {
             printf("Problem in tcp!\n");
         }
@@ -68,11 +68,27 @@ class ClientConnector
             //TODO add logger messages here.
 
             mutx.lock();
+
             game_state_json = update_state.to_json(); //Must be in lock before reading and sending to server.
-            //strcpy(update_buffer, game_state_json.dump(), );
+            strncpy(update_buffer, game_state_json.dump().c_str(), GameState::buf_size-1);
+
+            //Send over tcp.
+            //send(sd, update_buffer, GameState::buf_size, 0);
+            write(sd, update_buffer, GameState::buf_size); 
+            printf("Client >> Sent data!\n");
+
+            //Receive updated values from server.
+            //In this implementation, server is always right. (i suppose)
+            //recv(sd, update_buffer, GameState::buf_size, 0);
+            read(sd, update_buffer, GameState::buf_size);
+
+            GameState received_state = GameState::from_json(json::parse(update_buffer));
+
+            printf("Client >> : %d\n", received_state.a);
+            update_state.a = received_state.a; //bem porquinho por enquanto.
+
 
             mutx.unlock();
-
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }

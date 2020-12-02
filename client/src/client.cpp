@@ -50,9 +50,10 @@ class Client
         while(true)
         {
             mutx.lock();
+            printf("Ondraw %d\n", state.a);
             state.a += 10;
             mutx.unlock();
-            //std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 };

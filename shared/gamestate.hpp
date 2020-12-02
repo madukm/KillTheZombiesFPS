@@ -57,6 +57,7 @@ class GameState
 
     GameState()
     {
+        a = 0;
         //GameObj temp;
         //bodies.push_back(temp);
     }

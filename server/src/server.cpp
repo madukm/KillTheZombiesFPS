@@ -56,7 +56,8 @@ int main()
         //if () //if data available
         addr_size = sizeof(incoming_addr);
         temp_descriptor = accept(incoming_descriptor, (struct sockaddr*) &incoming_addr, &addr_size);
-        
+        printf("Accepted connection!\n");
+
         temp_new_client = new ServerConnector(server_game_state, temp_descriptor);
         active_clients.push_back(temp_new_client);
             
