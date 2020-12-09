@@ -1,30 +1,28 @@
-//------------------------------------//
-// Author: Breno Cunha Queiroz        //
-// Date: 2020-11-17                   //
-// SCC0650 - Computação Gráfica (2020)//
-//------------------------------------//
 #include "window.hpp"
-#include "defines.hpp"
-#include "helpers/log.hpp"
 
 Window::Window(std::string name):
 	_name(name)
 {
+	_log = new Logger("Window");
 }
 
 Window::~Window()
 {
-
+	if(_log != nullptr)
+	{
+		delete _log;
+		_log = nullptr;
+	}
 }
 
 void Window::init()
 {
-	Log::verbose("Window", "Initializing window...");
+	//Log::verbose("Window", "Initializing window...");
 
     // Check if glfw was initialized
     if(!glfwInit())
     {
-		Log::error("Window", "GLFW initialization failed!");
+		//Log::error("Window", "GLFW initialization failed!");
         glfwTerminate();
 		exit(1);
     }
@@ -36,12 +34,13 @@ void Window::init()
 	_height = mode->height;
 
     //---------- Create window ----------//
-    _window = glfwCreateWindow(_width, _height, _name.c_str(), glfwGetPrimaryMonitor(), nullptr);
+    //_window = glfwCreateWindow(_width, _height, _name.c_str(), glfwGetPrimaryMonitor(), nullptr);
+    _window = glfwCreateWindow(1200, 900, _name.c_str(), nullptr, nullptr);
 
 	// Check if window was created
     if(_window == nullptr)
     {
-		Log::error("Window", "Failed to create main window!");
+		//Log::error("Window", "Failed to create main window!");
         glfwTerminate();
         exit(1);
     }
@@ -60,7 +59,7 @@ void Window::init()
 	//---------- GLEW ----------//
 	if(glewInit())
 	{
-		Log::error("Window", "Glew initialization failed!");
+		//Log::error("Window", "Glew initialization failed!");
 		glfwDestroyWindow(_window);
 		glfwTerminate();
 		exit(1);
@@ -72,7 +71,7 @@ void Window::init()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	Log::success("Window", "Initialized");
+	//Log::success("Window", "Initialized");
 }
 
 void Window::loop()

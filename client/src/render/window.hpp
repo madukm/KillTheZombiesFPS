@@ -1,14 +1,10 @@
-//------------------------------------//
-// Author: Breno Cunha Queiroz        //
-// Date: 2020-11-17                   //
-// SCC0650 - Computação Gráfica (2020)//
-//------------------------------------//
 #ifndef WINDOW_H
 #define WINDOW_H
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <functional>
+#include "../../../shared/logger.hpp"
 
 class Window
 {
@@ -37,12 +33,14 @@ class Window
 		static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 		static void mouseClickCallback(GLFWwindow* window, int button, int action, int mods);
 
-		GLFWwindow* _window;
 		std::string _name;
+		GLFWwindow* _window;
 		int _width;
 		int _height;
 
 		double _time;
+
+		Logger* _log;
 };
 
 #endif// WINDOW_H

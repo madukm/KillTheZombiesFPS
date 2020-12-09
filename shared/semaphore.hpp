@@ -75,12 +75,8 @@ class Semaphore
         cv.notify_one();
     }
 
-<<<<<<< Updated upstream
     inline void down()
     {
-=======
-    inline void down() {
->>>>>>> Stashed changes
         std::unique_lock<std::mutex> lock(mtx);
 
         printf("DOWN!\n");

@@ -66,13 +66,9 @@ class ClientConnector
         while (true)
         {
             memset(update_buffer, 0, GameState::buf_size);
-<<<<<<< Updated upstream
-            mutx.lock();
-=======
             //TODO add logger messages here.
 
             state_semaphore.down();
->>>>>>> Stashed changes
 
             game_state_json = update_state.to_json(); //Must be in lock before reading and sending to server.
             strncpy(update_buffer, game_state_json.dump().c_str(), GameState::buf_size-1);
@@ -93,12 +89,7 @@ class ClientConnector
             client_connector_logger.log("Received state", logger::log_type::DEBUG);
             update_state.a = received_state.a; //bem porquinho por enquanto.
 
-<<<<<<< Updated upstream
-            mutx.unlock();
-=======
-
             state_semaphore.up();
->>>>>>> Stashed changes
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }

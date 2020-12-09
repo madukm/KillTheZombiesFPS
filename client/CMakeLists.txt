@@ -23,6 +23,6 @@ add_library(killTheZombiesLib INTERFACE)
 target_include_directories(killTheZombiesLib INTERFACE lib/)
 
 # Add subdirectories
-#add_subdirectory(assets)
+add_subdirectory(assets)
 add_subdirectory(src)
 
