@@ -8,6 +8,8 @@ if (UNIX)
     #add_definitions(-DUNIX)
     #add_compile_options("-std=c++17")
     add_compile_options("-Wall")
+	#add_link_options("-fsanitize=address")
+    #add_compile_options("-g")
 endif ()
 
 find_package(GLEW REQUIRED)

@@ -3,10 +3,13 @@ set(exe_name ${MAIN_PROJECT})
 set(src_files
         main.cpp
         client.cpp
+		clientConnector.cpp
         render/window.cpp
         render/shader.cpp
         render/mesh.cpp
         render/texture.cpp
+        render/camera.cpp
+        render/ui.cpp
         objects/object.cpp
         objects/survivor.cpp
         objects/block.cpp

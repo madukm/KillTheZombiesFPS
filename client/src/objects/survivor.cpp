@@ -26,3 +26,25 @@ void Survivor::draw()
 	texture->bind();
 	mesh->draw();
 }
+
+json Survivor::getJson()
+{
+	json result = {};
+	result["pos"] = {_position.x, _position.y, _position.z};
+	result["rot"] = {_rotation.x, _rotation.y, _rotation.z};
+	return result;
+}
+
+void Survivor::setJson(json state)
+{
+	if(state == nullptr)
+		return;
+
+	_position.x = state["pos"][0];
+	_position.x = state["pos"][0];
+	_position.x = state["pos"][0];
+
+	_rotation.x = state["rot"][0];
+	_rotation.x = state["rot"][0];
+	_rotation.x = state["rot"][0];
+}

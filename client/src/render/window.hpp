@@ -28,6 +28,7 @@ class Window
 		std::function<void(int button, int action, int mods)> onMouseClick;
 		std::function<void(double dt)> onDraw;
 
+		static float ratio;
 	private:
 		static void keyCallback(GLFWwindow* window, const int key, const int scancode, const int action, const int mods);
 		static void mouseCallback(GLFWwindow* window, double xpos, double ypos);

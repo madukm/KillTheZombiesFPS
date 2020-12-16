@@ -1,5 +1,7 @@
 #include "window.hpp"
 
+float Window::ratio = 1;
+
 Window::Window(std::string name):
 	_name(name)
 {
@@ -29,6 +31,7 @@ void Window::init()
 
     //---------- GLFW config ----------//
 	glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 	_width = mode->width;
 	_height = mode->height;
@@ -36,6 +39,7 @@ void Window::init()
     //---------- Create window ----------//
     //_window = glfwCreateWindow(_width, _height, _name.c_str(), glfwGetPrimaryMonitor(), nullptr);
     _window = glfwCreateWindow(1200, 900, _name.c_str(), nullptr, nullptr);
+	Window::ratio = 1200/900.0f;
 
 	// Check if window was created
     if(_window == nullptr)
@@ -69,6 +73,7 @@ void Window::init()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_BLEND);
+	glEnable(GL_CULL_FACE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	//Log::success("Window", "Initialized");

@@ -7,7 +7,11 @@
 Client::Client()
     //: _sem(1), _connector(ClientConnector(state, 42069, "127.0.0.1", sem))
 {
-	//	update_thread = std::thread(&ClientConnector::update, &connector);
+	//update_thread = std::thread(&ClientConnector::update, &connector);
+	
+	_clientConnector = new ClientConnector();
+	_clientConnector->connectToServer();
+
 	_window = new Window("Kill the Zombies");
 	_window->onKey = [this](const int key, const int scancode, const int action, const int mods) { onKey(key, scancode, action, mods); };
 	_window->onMouse = [this](double xpos, double ypos) { onMouse(xpos, ypos); };
@@ -15,10 +19,15 @@ Client::Client()
 	_window->onDraw = [this](double dt) { onDraw(dt); };
 	_window->init();
 
+	_camera  = nullptr;
+	_camera = new Camera(1200/900.f);
+
 	_log = new Logger("Client");
 
 	_shader = new Shader();
 	_shader->createFromFiles("../shaders/vert.glsl", "../shaders/frag.glsl");
+
+	_ui = new UI(_shader);
 
 	loadAssets();
 	createWorld();
@@ -32,16 +41,34 @@ Client::~Client() //Join threads.
 		_window = nullptr;
 	}
 
+	if(_camera != nullptr)
+	{
+		delete _camera;
+		_camera = nullptr;
+	}
+
 	if(_log != nullptr)
 	{
 		delete _log;
 		_log = nullptr;
 	}
 
+	if(_ui != nullptr)
+	{
+		delete _ui;
+		_ui = nullptr;
+	}
+
 	if(_shader != nullptr)
 	{
 		delete _shader;
 		_shader = nullptr;
+	}
+
+	if(_clientConnector != nullptr)
+	{
+		delete _clientConnector;
+		_clientConnector = nullptr;
 	}
 
 	for(auto& survivor : _survivors)
@@ -101,6 +128,7 @@ void Client::loadAssets()
 void Client::createWorld()
 {
 	_survivors.push_back(new Survivor(_shader));
+	_survivors.push_back(new Survivor(_shader));
 	_sceneZero = new SceneZero(_shader);
 }
 
@@ -109,10 +137,15 @@ void Client::createWorld()
 //------------------------------//
 void Client::onKey(int key, int scancode, int action, int mods)
 {
+	_camera->updateOnKey(key, scancode, action, mods);
+
 	if(action == GLFW_RELEASE)
 		return;
 	switch(key)
 	{
+		case GLFW_KEY_SPACE:
+			_camera->printInfo();
+			break;
 		case GLFW_KEY_ESCAPE:
 			_window->close();
 			break;
@@ -121,6 +154,7 @@ void Client::onKey(int key, int scancode, int action, int mods)
 
 void Client::onMouse(double xpos, double ypos)
 {
+	_camera->updateOnMouse(xpos/_window->getWidth(), ypos/_window->getHeight());
 }
 
 void Client::onMouseClick(int button, int action, int mods)
@@ -133,8 +167,14 @@ void Client::onMouseClick(int button, int action, int mods)
 
 void Client::onDraw(double dt)
 {
+	_clientConnector->updateServerState(_survivors);
+
+	_camera->update(dt);
+	_survivors[0]->setPosition(_camera->getPosition()-glm::vec3(0,1.5,0));
+	_survivors[0]->setRotation(-_camera->getRotation());
+
 	// Clear window
-	glClearColor(0.7f,0.7f,0.7f,1.0f);
+	glClearColor(1.0f,0.7f,0.7f,1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -148,10 +188,10 @@ void Client::onDraw(double dt)
 		);
 
 	// View matrix
-	glUniformMatrix4fv(_shader->getViewLocation(), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(_shader->getViewLocation(), 1, GL_FALSE, _camera->getView());
 
 	// Projection matrix
-	glUniformMatrix4fv(_shader->getProjectionLocation(), 1, GL_FALSE, glm::value_ptr(projection));
+	glUniformMatrix4fv(_shader->getProjectionLocation(), 1, GL_FALSE, _camera->getProjection());
 
 	// Use shader 0
 	_shader->useShader();
@@ -162,6 +202,8 @@ void Client::onDraw(double dt)
 	{
 		s->draw();
 	}
+
+	_ui->draw();
 
 	//while(true)
 	//{

@@ -4,12 +4,14 @@
 #include <chrono>
 #include <thread>
 #include <vector>
-//#include "clientConnector.hpp"
+#include "clientConnector.hpp"
 #include "../../shared/gamestate.hpp" //TODO add in cmake to include <gamestate.hpp>
 #include "../../shared/semaphore.hpp"
 #include "../../shared/logger.hpp"
 #include "render/window.hpp"
 #include "render/shader.hpp"
+#include "render/camera.hpp"
+#include "render/ui.hpp"
 #include "objects/survivor.hpp"
 #include "objects/block.hpp"
 #include "objects/sceneZero.hpp"
@@ -36,15 +38,17 @@ class Client
 		GameObj* _player;
 		Semaphore* _sem;
 
-		//ClientConnector _connector;
+		ClientConnector* _clientConnector;
 		std::thread _update_thread;
 		Logger* _log;
 
 		// Rendering specific
 		Window* _window;
 		Shader* _shader;
+		UI* _ui;
 
 		// Game specific
+		Camera* _camera;
 		std::vector<Survivor*> _survivors;
 		SceneZero* _sceneZero;
 

@@ -5,6 +5,8 @@
 #include "../render/shader.hpp"
 #include "../render/mesh.hpp"
 #include "../render/texture.hpp"
+#include "nlohmann/json.hpp"
+using namespace nlohmann;
 
 class Survivor : public Object
 {
@@ -16,6 +18,10 @@ class Survivor : public Object
 		~Survivor();
 
 		void draw();
+
+		json getJson();
+		void setJson(json state);
+		Shader* getShader() const { return _shader; }
 
 		static Mesh* mesh;
 		static Texture* texture;
