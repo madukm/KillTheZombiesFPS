@@ -1,5 +1,17 @@
-typedef struct
+#include <utility>
+#include <tuple>
+
+class GameMessage
 {
+    public:
+
+    GameMessage()
+    {
+    }
+
+    ~GameMessage()
+    {}
+
     enum //substituido por union.
     {
         HIT,
@@ -13,11 +25,11 @@ typedef struct
     {
         int hit_player; //
         std::tuple<float, float, float> coord;
-    }
+    };
 
     unsigned int who; //Bodie who has 'suffered'.
     int meta; //Metadata
-} game_message;
+};
 /*
  * {
  *  "hit":{

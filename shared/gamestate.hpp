@@ -8,24 +8,29 @@
 
 using json = nlohmann::json; 
 
-class GameObj
+class GamePlayer
 {
     public:
 
-    std::string name;
-    int temp;
-
-    GameObj()
+    GamePlayer()
     {
         name = std::string("OI\n");
-        temp = 0;
     }
 
-    static GameObj from_json(json parsed_obj)
+    static GamePlayer from_json(json parsed_obj)
     {
-        GameObj ret;
+        GamePlayer ret;
 
-        ret.temp = parsed_obj["temp"];
+        ret.pos_x = parsed_obj["pos_x"];
+        ret.pos_y = parsed_obj["pos_y"];
+        ret.pos_z = parsed_obj["pos_z"];
+
+        ret.rot_x = parsed_obj["rot_x"];
+        ret.rot_y = parsed_obj["rot_y"];
+        ret.rot_z = parsed_obj["rot_z"];
+
+        ret.health = parsed_obj["health"];
+        ret.power = parsed_obj["power"];
 
         return ret;
     }
@@ -34,19 +39,40 @@ class GameObj
     {
         json ret;
 
-        ret["temp"] = this->temp;
+        ret["pos_x"] = pos_x;
+        ret["pos_y"] = pos_y;
+        ret["pos_z"] = pos_z;
+                       
+        ret["rot_x"] = rot_x;
+        ret["rot_y"] = rot_y;
+        ret["rot_z"] = rot_z;
+
+        ret["health"] = health;
+        ret["power"] = power;
 
         return ret;
     }
 
-    //float x, y, z;
+    int get_id()
+    { return id; }
 
-    /*enum 
+    void set_id(int _id)
+    { id = _id; }
+
+    void decrease_health(const GamePlayer &hit_player)
     {
-        PLAYER,
-        ZOMBIE,
-        EXTRA //Gift boxes.
-    } type;*/
+        health -= hit_player.health;
+    }
+
+    private:
+
+    std::string name;
+    int health;
+    int power;
+    int id;
+
+    float pos_x, pos_y, pos_z;
+    float rot_x, rot_y, rot_z;
 };
 
 class GameState
@@ -56,22 +82,22 @@ class GameState
     static const int buf_size = 2000;
 
     GameState()
+    {}
+
+    GameState(const GameState &_state)
     {
-        a = 0;
-        //GameObj temp;
-        //bodies.push_back(temp);
+        this->players = _state.players;
     }
 
     static GameState from_json(json parsed_state)
     {
         GameState ret;
 
-        ret.a = parsed_state["a"];
-        
         //Parse objects.
-        for (auto body : parsed_state["bodies"])
+        for (auto body : parsed_state["players"])
         {
-            ret.bodies.push_back(GameObj::from_json(body));
+            GamePlayer _player = GamePlayer::from_json(body);
+            ret.players[_player.get_id()] = _player;
         }
 
         return ret;
@@ -81,25 +107,12 @@ class GameState
     {
         json ret;
 
-        ret["a"] = a;
-
-        json bodies = json::array();
-
-        for (auto body : this->bodies)
-        {
-            bodies.push_back(body.to_json());
-        }
-
-        ret["bodies"] = bodies;
+        ret["players"] = json::parse(players);
 
         return ret;
     }
 
-    int a;
-
-    private:
-
-    std::vector<GameObj> bodies; //To be rendered.
+    std::unordered_map<int, GamePlayer> players;
 };
 
 #endif
