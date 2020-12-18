@@ -11,13 +11,17 @@ class Block : public Object
 		Block(Shader* shader, 
 				glm::vec3 position = {0,0,0}, 
 				glm::vec3 rotation = {0,0,0},
-				glm::vec3 scale = {1,1,1});
+				glm::vec3 scale = {1,1,1},
+				glm::vec3 color = {1,.8,.8});
 		~Block();
 
 		void draw();
 
 		static Mesh* mesh;
-		static Texture* texture;
+		//static Texture* texture;
+
+	private:
+		glm::vec3 _color;
 };
 
 #endif// BLOCK_H

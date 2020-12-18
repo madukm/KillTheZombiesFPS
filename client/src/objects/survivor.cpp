@@ -17,7 +17,8 @@ Survivor::~Survivor()
 
 void Survivor::draw()
 {
-	//---------- Draw garage ----------//
+	_shader->useOnlyTexture();
+
 	glm::mat4 mat = getModelMat();
 	mat = glm::transpose(mat);
     glUniformMatrix4fv(_shader->getModelLocation(), 1, GL_TRUE, glm::value_ptr(mat));

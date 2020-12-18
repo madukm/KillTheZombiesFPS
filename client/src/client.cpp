@@ -25,11 +25,14 @@ Client::Client()
 
 	loadAssets();
 	createWorld();
+	_ui->setZombies(_zombies);
+	//_ui->setPlayers(_players);
 
     // Connection bootstraping
 
     //TODO add config file.
-	_clientConnector = new ClientConnector(1337, "127.0.0.1");
+	//_clientConnector = new ClientConnector(1337, "127.0.0.1");
+	_clientConnector = nullptr;
 
     sender_thread = std::thread(&Client::messageSender, this);
     receiver_thread = std::thread(&Client::stateReceiver, this);
@@ -82,6 +85,15 @@ Client::~Client() //Join threads.
 		}
 	}
 
+	for(auto& z : _zombies)
+	{
+		if(z != nullptr)
+		{
+			delete z;
+			z = nullptr;
+		}
+	}
+
 	if(Survivor::mesh != nullptr)
 	{
 		delete Survivor::mesh;
@@ -100,11 +112,11 @@ Client::~Client() //Join threads.
 		Block::mesh = nullptr;
 	}
 
-	if(Block::texture != nullptr)
-	{
-		delete Block::texture;
-		Block::texture = nullptr;
-	}
+	//if(Block::texture != nullptr)
+	//{
+	//	delete Block::texture;
+	//	Block::texture = nullptr;
+	//}
 
 	if(_sceneZero != nullptr)
 	{
@@ -123,8 +135,10 @@ void Client::loadAssets()
 {
 	Survivor::mesh = new Mesh("survivor.obj");
 	Survivor::texture = new Texture("survivor.png");
+	Zombie::mesh = new Mesh("survivor.obj");
+	Zombie::texture = new Texture("zombie.png");
 	Block::mesh = new Mesh("block.obj");
-	Block::texture = new Texture("brick.png");
+	//Block::texture = new Texture("brick.png");
 }
 
 void Client::createWorld()
@@ -132,7 +146,61 @@ void Client::createWorld()
     //Notify server that a new player is in.
 
 	_sceneZero = new SceneZero(_shader);
+	_camera->setSceneBlocks(_sceneZero->getBlocks());
+
+	_zombies.push_back(new Zombie(_shader, {0,1,2}, {0,0,0}, {0.5,0.5,0.5}));
 }
+
+
+void Client::messageSender()
+{
+    while(1)
+    {
+        //Dequeue from messages.
+        /*
+        if ()
+        {
+            //Do this stuff
+            //_clientConnector.
+        }
+        */
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+}
+
+void Client::stateReceiver()
+{
+    while(0)
+    {
+        // Receive state from server and update on client.
+        // Parse game state
+        json j_state = _clientConnector->receive_game_state(); 
+
+        GameState received_state = GameState::from_json(j_state);
+
+        // Remove dead entities.
+        for (int killed : received_state.killed_ids)
+        {
+            _players.erase(killed);
+        }
+    
+        // Add spawned entities.
+        for (int spawned : received_state.spawned_ids)
+        {
+            _players[spawned] = new Survivor(_shader);
+        }
+
+        // Update positions and rotations of everybody
+        for (GameObj player: received_state.players)
+        {
+            Object* local_player = _players[player.get_id()];
+
+            local_player->setPosition(player.get_position());
+            local_player->setRotation(player.get_rotation());
+        }
+    }
+}
+
 
 //------------------------------//
 //--------- Callbacks ----------//
@@ -173,11 +241,11 @@ void Client::onDraw(double dt)
 	//_clientConnector->updateServerState(_survivors);
 
 	_camera->update(dt);
-	_players[_player->get_id()]->setPosition(_camera->getPosition()-glm::vec3(0,1.5,0));
-	_players[_player->get_id()]->setRotation(_camera->getRotation());
+	//_players[_player->get_id()]->setPosition(_camera->getPosition()-glm::vec3(0,1.5,0));
+	//_players[_player->get_id()]->setRotation(_camera->getRotation());
 
 	// Clear window
-	glClearColor(1.0f,0.7f,0.7f,1.0f);
+	glClearColor(0.5f,0.5f,0.8f,1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Populate view and projection matrices
@@ -197,6 +265,8 @@ void Client::onDraw(double dt)
 
 	// Use shader 0
 	_shader->useShader();
+	_shader->useOnlyTexture();
+	_shader->setProcessLight(true);
 
 	_sceneZero->draw();
 
@@ -205,58 +275,14 @@ void Client::onDraw(double dt)
 		p.second->draw();
 	}
 
+	for(auto &z : _zombies)
+	{
+		z->draw();
+	}
+
+	_shader->setProcessLight(false);
 	_ui->draw();
 	
     // Swap buffers
 	_window->swapBuffers();
 }
-
-void Client::messageSender()
-{
-    while(1)
-    {
-        //Dequeue from messages.
-        /*
-        if ()
-        {
-            //Do this stuff
-            //_clientConnector.
-        }
-        */
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-}
-
-void Client::stateReceiver()
-{
-    while(1)
-    {
-        // Receive state from server and update on client.
-        // Parse game state
-        json j_state = _clientConnector->receive_game_state(); 
-
-        GameState received_state = GameState::from_json(j_state);
-
-        // Remove dead entities.
-        for (int killed : received_state.killed_ids)
-        {
-            _players.erase(killed);
-        }
-    
-        // Add spawned entities.
-        for (int spawned : received_state.spawned_ids)
-        {
-            _players[spawned] = new Survivor(_shader);
-        }
-
-        // Update positions and rotations of everybody
-        for (GameObj player: received_state.players)
-        {
-            Object* local_player = _players[player.get_id()];
-
-            local_player->setPosition(player.get_position());
-            local_player->setRotation(player.get_rotation());
-        }
-    }
-}
-

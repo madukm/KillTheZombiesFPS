@@ -11,6 +11,7 @@ set(src_files
         render/ui.cpp
         objects/object.cpp
         objects/survivor.cpp
+        objects/zombie.cpp
         objects/block.cpp
         objects/sceneZero.cpp
 )

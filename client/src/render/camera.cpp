@@ -3,6 +3,7 @@
 // Date: 2020-11-18                   //
 // SCC0650 - Computação Gráfica (2020)//
 //------------------------------------//
+#include "../objects/block.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <GLFW/glfw3.h>
@@ -10,9 +11,9 @@
 #include "camera.hpp"
 
 Camera::Camera(float windowRatio):
-	_ratio(windowRatio), _firstMouse(true)
+	_ratio(windowRatio), _firstMouse(true), _fly(false), _collisionDetection(true)
 {
-	_position = {0,1.5,0};
+	_position = {0,1.8,10};
 	_up = {0,1,0};
 	_front = {0,0,-1};
 
@@ -64,6 +65,10 @@ void Camera::updateOnKey(int key, int scancode, int action, int mods)
 			else
 				_movingLeft = 1;
 			break;
+		case GLFW_KEY_F:
+			if(action == GLFW_PRESS)
+				_fly = !_fly;
+			break;
 	}
 }
 
@@ -105,11 +110,19 @@ void Camera::updateOnMouse(double xpos, double ypos)
 void Camera::update(double dt)
 {
 	glm::vec3 planeFront = _front;
-	planeFront.y = 0;
-	planeFront = glm::normalize(planeFront);
+	if(!_fly)
+	{
+		planeFront.y = 0;
+		planeFront = glm::normalize(planeFront);
+	}
 
-	_position += planeFront*_speed * float(_movingForward*dt);
-	_position += glm::normalize(glm::cross(_front, _up))*_speed * float(_movingLeft*dt);
+	glm::vec3 nextPos = _position;
+	nextPos += planeFront*_speed * float(_movingForward*dt);
+	nextPos += glm::normalize(glm::cross(_front, _up))*_speed * float(_movingLeft*dt);
+
+	// Move only if not colliding
+	if(detectCollision(nextPos) == false)
+		_position = nextPos;
 
 	_view = glm::lookAt(_position, _position+_front, _up);
 	_projection = glm::perspective(
@@ -151,4 +164,22 @@ const float* Camera::getView()
 const float* Camera::getProjection()
 {
 	return glm::value_ptr(_projection);
+}
+
+
+//------------------------------//
+//----- Collision Detection ----//
+//------------------------------//
+bool Camera::detectCollision(glm::vec3 position)
+{
+	for(auto block : _sceneBlocks)
+	{
+		glm::vec3 position = block->getPosition();
+		glm::vec3 rotatino = block->getRotation();
+		glm::vec3 scale = block->getScale();
+
+		// TODO calculate using separating axis theorem
+	}
+
+	return false;
 }
