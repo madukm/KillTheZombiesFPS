@@ -16,7 +16,6 @@ class Object
 
 		glm::mat4 getModelMat();
 
-
 		glm::vec3 getPosition() { return _position; };
 		glm::vec3 getRotation() { return _rotation; };
 		glm::vec3 getScale() { return _scale; };

@@ -14,8 +14,7 @@ enum log_type
 {
 	INFO,
 	WARN,
-	DEBUG,
-	NONE
+	DEBUG
 };
 
 class Logger
@@ -51,7 +50,23 @@ class Logger
 		__log(std::string(message));
 		__unset_color();
 	}
+		
+	void log(std::string message)
+	{
+		__log(message);
+	}
 	
+	void log(char* message)
+	{
+		__log(std::string(message));
+	}
+	
+	void log(const char* message)
+	{
+		__log(std::string(message));
+	}
+	
+
 	private:
 	
 	void __log(std::string message)

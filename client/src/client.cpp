@@ -5,14 +5,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 Client::Client()
-    //: _sem(1), _connector(ClientConnector(state, 42069, "127.0.0.1", sem))
 {
-	//update_thread = std::thread(&ClientConnector::update, &connector);
-	
-	_clientConnector = new ClientConnector();
-	_clientConnector->connectToServer();
-
-	_window = new Window("Kill the Zombies");
+    _window = new Window("Kill the Zombies");
 	_window->onKey = [this](const int key, const int scancode, const int action, const int mods) { onKey(key, scancode, action, mods); };
 	_window->onMouse = [this](double xpos, double ypos) { onMouse(xpos, ypos); };
 	_window->onMouseClick = [this](int button, int action, int mods) { onMouseClick(button, action, mods); };
@@ -31,6 +25,14 @@ Client::Client()
 
 	loadAssets();
 	createWorld();
+
+    // Connection bootstraping
+
+    //TODO add config file.
+	_clientConnector = new ClientConnector(1337, "127.0.0.1");
+
+    sender_thread = std::thread(&Client::messageSender, this);
+    receiver_thread = std::thread(&Client::stateReceiver, this);
 }
 
 Client::~Client() //Join threads.
@@ -71,7 +73,7 @@ Client::~Client() //Join threads.
 		_clientConnector = nullptr;
 	}
 
-	for(auto& survivor : _survivors)
+	for(auto& survivor : _players)
 	{
 		if(survivor != nullptr)
 		{
@@ -127,8 +129,8 @@ void Client::loadAssets()
 
 void Client::createWorld()
 {
-	_survivors.push_back(new Survivor(_shader));
-	_survivors.push_back(new Survivor(_shader));
+    //Notify server that a new player is in.
+
 	_sceneZero = new SceneZero(_shader);
 }
 
@@ -167,16 +169,15 @@ void Client::onMouseClick(int button, int action, int mods)
 
 void Client::onDraw(double dt)
 {
-	_clientConnector->updateServerState(_survivors);
+	//_clientConnector->updateServerState(_survivors);
 
 	_camera->update(dt);
-	_survivors[0]->setPosition(_camera->getPosition()-glm::vec3(0,1.5,0));
-	_survivors[0]->setRotation(-_camera->getRotation());
+	_players[_player->get_id()]->setPosition(_camera->getPosition()-glm::vec3(0,1.5,0));
+	_players[_player->get_id()]->setRotation(_camera->getRotation());
 
 	// Clear window
 	glClearColor(1.0f,0.7f,0.7f,1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
 	// Populate view and projection matrices
 	glm::mat4 view = glm::lookAt(glm::vec3(15,15,15), glm::vec3(0,0,0), glm::vec3(0,1,0));
@@ -198,25 +199,63 @@ void Client::onDraw(double dt)
 
 	_sceneZero->draw();
 
-	for(auto& s : _survivors)
+	for(Object *p : _players)
 	{
-		s->draw();
+		p->draw();
 	}
 
 	_ui->draw();
-
-	//while(true)
-	//{
-	//	//mutx.lock();
-	//	//client_log.log("Ondraw", logger::log_type::DEBUG);
-	//	//printf("Ondraw %d\n", state.a);
-	//	sem.down();
-	//	printf("Ondraw %d\n", state.a);
-	//	state.a += 10;
-	//	sem.up();
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	//}
 	
-	// Swap buffers
+    // Swap buffers
 	_window->swapBuffers();
 }
+
+void Client::messageSender()
+{
+    while(1)
+    {
+        //Dequeue from messages.
+        /*
+        if ()
+        {
+            //Do this stuff
+            //_clientConnector.
+        }
+        */
+        std::this_thread::sleep_for(500ms);
+    }
+}
+
+void Client::stateReceiver()
+{
+    while(1)
+    {
+        // Receive state from server and update on client.
+        // Parse game state
+        json j_state = _clientConnector->receive_game_state(); 
+
+        GameState received_state = GameState::from_json(j_state);
+
+        // Remove dead entities.
+        for (int killed : received_state.killed_ids)
+        {
+            _players.erase(killed);
+        }
+    
+        // Add spawned entities.
+        for (int spawned : received_state.spawned_ids)
+        {
+            _players[spawned] = new Survivor();
+        }
+
+        // Update positions and rotations of everybody
+        for (GameObj player: received_state.players)
+        {
+            Object* local_player = _players[player.get_id()];
+
+            local_player->setPosition(player.get_position());
+            local_player->setRotation(player.get_rotation());
+        }
+    }
+}
+

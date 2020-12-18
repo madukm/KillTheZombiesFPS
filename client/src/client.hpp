@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+
 #include "clientConnector.hpp"
 #include "../../shared/gamestate.hpp" //TODO add in cmake to include <gamestate.hpp>
 #include "../../shared/semaphore.hpp"
@@ -34,6 +35,7 @@ class Client
 		void onMouseClick(int button, int action, int mods);
 		void onDraw(double dt);
 
+        // ???
 		GameState* _state;
 		GameObj* _player;
 		Semaphore* _sem;
@@ -49,8 +51,15 @@ class Client
 
 		// Game specific
 		Camera* _camera;
-		std::vector<Survivor*> _survivors;
 		SceneZero* _sceneZero;
+		
+        std::unordered_map<int, Object*> _players;
 
+        // Server connection
+        void messageSender();
+        void stateReceiver();
+
+        std::thread sender_thread;
+        std::thread receiver_thread;
 };
 #endif// CLIENT_H
