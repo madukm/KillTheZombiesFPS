@@ -25,6 +25,12 @@ class GameObj
 		name = std::string("usuario x");
 	}
 
+	GameObj(unsigned int id)
+	{
+		name = std::string("usuario x");
+		this->id = id;
+	}
+
     static GameObj from_json(json parsed_obj)
     {
         GameObj ret;
