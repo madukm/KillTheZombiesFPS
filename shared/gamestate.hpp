@@ -5,7 +5,7 @@
 #include <tuple>
 #include <glm/glm.hpp>
 
-#include "../../shared/json.hpp"
+#include "json.hpp"
 
 using json = nlohmann::json; 
 
@@ -23,6 +23,12 @@ class GameObj
     GameObj()
     {
 		name = std::string("usuario x");
+	}
+
+	GameObj(unsigned int id)
+	{
+		name = std::string("usuario x");
+		this->id = id;
 	}
 
     static GameObj from_json(json parsed_obj)

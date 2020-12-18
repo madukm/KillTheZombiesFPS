@@ -1,5 +1,6 @@
-#include "../../shared/json.hpp"
-#include "render/camera.hpp"
+#include "json.hpp"
+#include "gamestate.hpp"
+#include "../client/src/render/camera.hpp"
 
 using json = nlohmann::json; 
 
@@ -15,31 +16,41 @@ class GameMessage
 {
 public:
 	GameMessage(){};
-	GameMessage(unsigned int idPlayer) :
-		_idPlayer(idPlayer)
+	GameMessage(int idPlayer):
+		game_obj(idPlayer)
 	{}
 	
-	unsigned int getIdPlayer(){ return _idPlayer; }
+	int getIdPlayer(){ return game_obj.get_id(); }
 
-	json getMoveMessageJson(message_type m, std::tuple<float, float, float> coord)//, Camera &camera)
+	static GameMessage from_json(json parsed_obj)
 	{
-		json moveMessageJson;
-		moveMessageJson["type"] = m;
-		moveMessageJson["type"]["idPlayer"] = _idPlayer;  
-		moveMessageJson["type"]["coord"] = coord; 
-		return moveMessageJson;		
+		GameMessage ret;
+		if(parsed_obj["type"] == HIT){
+			ret._type = HIT;
+			ret.game_obj.from_json(parsed_obj);
+		}
+		else if(parsed_obj["type"] == MOVE){
+			ret._type = MOVE;
+			ret.game_obj.from_json(parsed_obj);
+			ret._hitPlayer = parsed_obj["hitPlayer"];
+		
+		}
 	}
-
-	json getHitMessageJson(message_type m, unsigned int hitPlayer)
+ 	
+	json to_json()
 	{
-		json hitMessageJson;
-	 	hitMessageJson["type"] = m;
-	 	hitMessageJson["type"]["idPlayer"] = _idPlayer; 
-	 	hitMessageJson["type"]["hitPlayer"] = hitPlayer; 
-		return hitMessageJson;
+		json ret;
+		ret["type"] = _type;
+		if(_type == MOVE){
+			ret = game_obj.to_json();
+		}
+		if(_type == HIT){
+			ret["hitPlayer"] = _hitPlayer;
+		}
 	}
 
 private:
-	unsigned int _idPlayer;
-	
+	GameObj game_obj;
+	message_type _type;
+	unsigned int _hitPlayer;
 };
