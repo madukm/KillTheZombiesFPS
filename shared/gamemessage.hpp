@@ -1,34 +1,45 @@
-typedef struct
+#include "../../shared/json.hpp"
+#include "render/camera.hpp"
+
+using json = nlohmann::json; 
+
+enum message_type
 {
-    enum //substituido por union.
-    {
         HIT,
         HEAL,
         MOVE,
         PICK
-    } m_type; //message type.
+};
 
-    //message payload
-    union 
-    {
-        int hit_player; //
-        std::tuple<float, float, float> coord;
-    }
+class GameMessage
+{
+public:
+	GameMessage(){};
+	GameMessage(unsigned int idPlayer) :
+		_idPlayer(idPlayer)
+	{}
+	
+	unsigned int getIdPlayer(){ return _idPlayer; }
 
-    unsigned int who; //Bodie who has 'suffered'.
-    int meta; //Metadata
-} game_message;
-/*
- * {
- *  "hit":{
- *      "playerid" : 
- *  }
- *  "move":{
- *      "coord" : [x, y, z]
- *  }
- *
- * }
- *
- *
- * */
+	json getMoveMessageJson(message_type m, std::tuple<float, float, float> coord)//, Camera &camera)
+	{
+		json moveMessageJson;
+		moveMessageJson["type"] = m;
+		moveMessageJson["type"]["idPlayer"] = _idPlayer;  
+		moveMessageJson["type"]["coord"] = coord; 
+		return moveMessageJson;		
+	}
 
+	json getHitMessageJson(message_type m, unsigned int hitPlayer)
+	{
+		json hitMessageJson;
+	 	hitMessageJson["type"] = m;
+	 	hitMessageJson["type"]["idPlayer"] = _idPlayer; 
+	 	hitMessageJson["type"]["hitPlayer"] = hitPlayer; 
+		return hitMessageJson;
+	}
+
+private:
+	unsigned int _idPlayer;
+	
+};

@@ -1,31 +1,44 @@
 #ifndef GAME_STATE_H
 #define GAME_STATE_H
 
-#include <vector>
-#include <string>
+#include <utility>
+#include <tuple>
+#include <glm/glm.hpp>
 
-#include "json.hpp"
+#include "../../shared/json.hpp"
 
 using json = nlohmann::json; 
+
+enum obj_type
+{
+	PLAYER,
+    ZOMBIE,
+    EXTRA //Gift boxes.
+};
 
 class GameObj
 {
     public:
 
-    std::string name;
-    int temp;
-
     GameObj()
     {
-        name = std::string("OI\n");
-        temp = 0;
-    }
+		name = std::string("usuario x");
+	}
 
     static GameObj from_json(json parsed_obj)
     {
         GameObj ret;
 
-        ret.temp = parsed_obj["temp"];
+        ret._position.x = parsed_obj["position"][0];
+		ret._position.y = parsed_obj["position"][1];
+		ret._position.z = parsed_obj["position"][2];
+		
+ 		ret._rotation.x = parsed_obj["rotation"][0];
+		ret._rotation.y = parsed_obj["rotation"][1];
+		ret._rotation.z = parsed_obj["rotation"][2];
+        
+		ret.health = parsed_obj["health"];
+        ret.power = parsed_obj["power"];
 
         return ret;
     }
@@ -33,46 +46,60 @@ class GameObj
     json to_json()
     {
         json ret;
+		ret["position"] ={ _position.x, _position.y, _position.z };
+        ret["rotation"] ={ _rotation.x, _rotation.y, _rotation.z };
 
-        ret["temp"] = this->temp;
-
-        return ret;
+        ret["health"] = health;
+        ret["power"] = power;	
+		
+		return ret;
     }
+	
+	void decrease_health(const GameObj &hit_player)
+	{
+		health -= hit_player.health;
+	}
+	
+    int get_id() { return id; }
 
-    //float x, y, z;
+    void set_id(int _id){ id = _id; }
 
-    /*enum 
-    {
-        PLAYER,
-        ZOMBIE,
-        EXTRA //Gift boxes.
-    } type;*/
+private:
+	std::string name;
+    int health;
+    int power;
+    int id;
+	
+	glm::vec3 _position;
+	glm::vec3 _rotation;
+	
+    obj_type type;
+
 };
+
 
 class GameState
 {
-    public:
+public:
 
     static const int buf_size = 2000;
 
-    GameState()
-    {
-        a = 0;
-        //GameObj temp;
-        //bodies.push_back(temp);
-    }
+    GameState(){}
+	GameState(const GameState &_state)
+	{
+		players = _state.players;
+	}
 
     static GameState from_json(json parsed_state)
     {
         GameState ret;
 
-        ret.a = parsed_state["a"];
-        
         //Parse objects.
-        for (auto body : parsed_state["bodies"])
+        for (auto body : parsed_state["players"])
         {
-            ret.bodies.push_back(GameObj::from_json(body));
-        }
+        	GameObj _obj = GameObj::from_json(body);
+			ret.players[_obj.get_id()] = _obj;
+		}
 
         return ret;
     }
@@ -80,26 +107,12 @@ class GameState
     json to_json()
     {
         json ret;
-
-        ret["a"] = a;
-
-        json bodies = json::array();
-
-        for (auto body : this->bodies)
-        {
-            bodies.push_back(body.to_json());
-        }
-
-        ret["bodies"] = bodies;
-
+		ret["players"] = json::parse(players);
         return ret;
     }
 
-    int a;
+	std::unordered_map<int, GameObj> players;
 
-    private:
-
-    std::vector<GameObj> bodies; //To be rendered.
 };
 
 #endif
