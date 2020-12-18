@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.2)
 project(KillTheZombiesFPS VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-set()
+
 if (UNIX)
     #add_definitions(-DUNIX)
     add_compile_options("-std=c++17")

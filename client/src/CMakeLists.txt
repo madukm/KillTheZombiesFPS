@@ -3,7 +3,6 @@ set(exe_name ${MAIN_PROJECT})
 set(src_files
         main.cpp
         client.cpp
-		clientConnector.cpp
         render/window.cpp
         render/shader.cpp
         render/mesh.cpp

@@ -5,7 +5,7 @@
 #include <tuple>
 #include <glm/glm.hpp>
 
-#include "../../shared/json.hpp"
+#include "json.hpp"
 
 using json = nlohmann::json; 
 
@@ -64,6 +64,12 @@ class GameObj
 
     void set_id(int _id){ id = _id; }
 
+    glm::vec3 get_position() { return _position; }
+    void set_position(glm::vec3 position) { _position = position; }
+
+    glm::vec3 get_rotation() { return _rotation; }
+    void set_rotation(glm::vec3 rotation) { _rotation = rotation; }
+
 private:
 	std::string name;
     int health;
@@ -74,7 +80,6 @@ private:
 	glm::vec3 _rotation;
 	
     obj_type type;
-
 };
 
 
@@ -98,8 +103,11 @@ public:
         for (auto body : parsed_state["players"])
         {
         	GameObj _obj = GameObj::from_json(body);
-			ret.players[_obj.get_id()] = _obj;
+			ret.players.push_back(_obj);
 		}
+
+        ret.spawned_ids = parsed_state["spawned_ids"].get<std::vector<int>>();
+        ret.killed_ids = parsed_state["killed_ids"].get<std::vector<int>>();
 
         return ret;
     }
@@ -107,12 +115,21 @@ public:
     json to_json()
     {
         json ret;
-		ret["players"] = json::parse(players);
+
+        for (GameObj &_player : players)
+        {
+		    ret["players"].push_back(_player.to_json());
+        }
+
+        ret["spawned_ids"] = json(spawned_ids);
+        ret["killed_ids"] = json(killed_ids);
+
         return ret;
     }
 
-	std::unordered_map<int, GameObj> players;
-
+    std::vector<GameObj> players;
+    std::vector<int> spawned_ids;
+    std::vector<int> killed_ids;
 };
 
 #endif

@@ -73,12 +73,12 @@ Client::~Client() //Join threads.
 		_clientConnector = nullptr;
 	}
 
-	for(auto& survivor : _players)
+	for(auto& s : _players)
 	{
-		if(survivor != nullptr)
+		if(s.second != nullptr)
 		{
-			delete survivor;
-			survivor = nullptr;
+			delete s.second;
+			s.second = nullptr;
 		}
 	}
 
@@ -143,6 +143,7 @@ void Client::onKey(int key, int scancode, int action, int mods)
 
 	if(action == GLFW_RELEASE)
 		return;
+
 	switch(key)
 	{
 		case GLFW_KEY_SPACE:
@@ -199,9 +200,9 @@ void Client::onDraw(double dt)
 
 	_sceneZero->draw();
 
-	for(Object *p : _players)
+	for(auto &p : _players)
 	{
-		p->draw();
+		p.second->draw();
 	}
 
 	_ui->draw();
@@ -222,7 +223,7 @@ void Client::messageSender()
             //_clientConnector.
         }
         */
-        std::this_thread::sleep_for(500ms);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 
@@ -245,7 +246,7 @@ void Client::stateReceiver()
         // Add spawned entities.
         for (int spawned : received_state.spawned_ids)
         {
-            _players[spawned] = new Survivor();
+            _players[spawned] = new Survivor(_shader);
         }
 
         // Update positions and rotations of everybody

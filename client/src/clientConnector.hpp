@@ -14,7 +14,6 @@
 #include "../../shared/gamestate.hpp"
 
 using json = nlohmann::json; 
-Logger client_connector_logger("clientconnector.hpp");
 
 //Connects client to server.
 class ClientConnector
@@ -23,9 +22,11 @@ class ClientConnector
 	int sd;
 	struct sockaddr_in serveraddr;
 
+    Logger client_connector_logger;
     char *update_buffer;
 
-    ClientConnector(unsigned short port, std::string address) 
+    ClientConnector(unsigned short port, std::string address) : 
+        client_connector_logger(Logger("clientconnector.hpp"))
     {
 		unsigned short _port = htons(port);
 		if((sd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -51,11 +52,25 @@ class ClientConnector
 		close(sd);
 	}
 
-    void send_game_message(json &j_message)
+    int send_init_sequence() //Asks server for a slot.
     {
         //Get info and update state.
-        json game_state_json;
+        json j_message;
+        j_message["type"] = 2; //Init
 
+        memset(update_buffer, 0, GameState::buf_size);
+        strncpy(update_buffer, j_message.dump().c_str(), GameState::buf_size-1);
+        
+        write(sd, update_buffer, GameState::buf_size); 
+        read(sd, update_buffer, GameState::buf_size);
+
+        //got slot...
+        return json::parse(update_buffer)["new_id"];
+    }
+
+
+    void send_game_message(json &j_message)
+    {
         memset(update_buffer, 0, GameState::buf_size);
         strncpy(update_buffer, j_message.dump().c_str(), GameState::buf_size-1);
 
