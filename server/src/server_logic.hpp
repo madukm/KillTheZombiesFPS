@@ -37,7 +37,7 @@ class ServerLogic
     {
         GameMessage received_message;
         bool new_message;
-        /*
+
         while(1)
         {
             message_queue_semaphore.down();
@@ -57,9 +57,18 @@ class ServerLogic
                     case MOVE:
                     {
                         GameObj &temp_obj = 
-                            _players[received_message._game_obj.get_id()];
+                            _state.players[received_message._game_obj.get_id()];
                         temp_obj.set_position(received_message._game_obj.get_position());
                         temp_obj.set_rotation(received_message._game_obj.get_rotation());
+                        temp_obj.set_scale(received_message._game_obj.get_scale());
+                        temp_obj.set_health(received_message._game_obj.get_health());
+                        temp_obj.set_power(received_message._game_obj.get_power());
+                        temp_obj.set_name(received_message._game_obj.get_name());
+
+                        temp_obj.set_fly(received_message._game_obj.get_fly());
+                        temp_obj.set_front(received_message._game_obj.get_front());
+                        temp_obj.set_moving_forward(received_message._game_obj.get_moving_forward());
+                        temp_obj.set_moving_left(received_message._game_obj.get_moving_left());
                         break;
                     }
 
@@ -85,7 +94,6 @@ class ServerLogic
                 //client.second->_update_queue.push();
             }
         }
-        */
     }
 
     void add_client(int new_client_descriptor)
@@ -118,27 +126,20 @@ class ServerLogic
 
 	void delete_disconnected()
 	{
-		for(auto client : active_clients)
+		for(auto& client : active_clients)
 		{
 			if(client.second->get_connected() == false)
 			{
 				delete client.second;
-				active_clients.erase(client.first);
+				client.second = nullptr;
 
-                if (_state.players.count(client.first) != 0)
+                if(_state.players.count(client.first) != 0)
                 {
                     _state.players.erase(client.first);
                 }
 
-                /*
-				for(int i=0; i<(int)_state.players.size(); i++)
-				{
-					if(_state.players[i].get_id() == client.first)
-					{
-						_state.players.erase(_state.players.begin()+i);
-					}
-				}
-                */
+				active_clients.erase(client.first);
+				return;
 			}
 		}
 	}

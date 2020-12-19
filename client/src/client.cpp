@@ -2,10 +2,11 @@
 #include "render/mesh.hpp"
 #include "render/texture.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
 #include <set>
 #include <functional>
+
 
 Client::Client()
 {
@@ -168,7 +169,7 @@ void Client::messageSender() //This is a thread
     while(1)
     {
         //Dequeue from messages.
-        if (!message_queue.empty())
+        if(!message_queue.empty())
         {
             //Do this stuff
             //_clientConnector.
@@ -180,7 +181,7 @@ void Client::messageSender() //This is a thread
         }
 
         _clientConnector->send_game_message(sent_message.to_json());
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
 
@@ -212,10 +213,21 @@ void Client::stateReceiver()
             }
             else local_id_players.erase(player.get_id());
 
-            Object* local_player = _players[player.get_id()];
+            Survivor* local_player = (Survivor*)_players[player.get_id()];
 
             local_player->setPosition(player.get_position());
             local_player->setRotation(player.get_rotation());
+            local_player->setScale(player.get_scale());
+			std::cout << glm::to_string(local_player->getScale()) << std::endl;
+            local_player->setId(player.get_id());
+            local_player->setHealth(player.get_health());
+            local_player->setPower(player.get_power());
+            local_player->setName(player.get_name());
+
+            local_player->setFly(player.get_fly());
+            local_player->setFront(player.get_front());
+            local_player->setMovingForward(player.get_moving_forward());
+            local_player->setMovingLeft(player.get_moving_left());
         }
 
         //Check here if i was not killed.
@@ -227,7 +239,6 @@ void Client::stateReceiver()
             delete dead_player_ptr;
             _players.erase(dead_player_id);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 
@@ -271,8 +282,13 @@ void Client::onDraw(double dt)
 	//_clientConnector->updateServerState(_survivors);
 
 	_camera->update(dt);
-	//_players[_player->get_id()]->setPosition(_camera->getPosition()-glm::vec3(0,1.5,0));
-	//_players[_player->get_id()]->setRotation(_camera->getRotation());
+	_player->set_position(_camera->getPosition()-glm::vec3(0,0.8,0));
+	_player->set_rotation(_camera->getRotation());
+	_player->set_scale({0.5,0.5,0.5});
+	_player->set_fly(_camera->getFly());
+	_player->set_front(_camera->getFront());
+	_player->set_moving_forward(_camera->getMovingForward());
+	_player->set_moving_left(_camera->getMovingLeft());
 
 	// Clear window
 	glClearColor(0.5f,0.5f,0.8f,1.0f);
@@ -300,8 +316,12 @@ void Client::onDraw(double dt)
 
 	_sceneZero->draw();
 
-	for(auto &p : _players)
+	for(auto& p : _players)
 	{
+		if(((Survivor*)p.second)->getId() == _player->get_id())
+			continue;
+
+		((Survivor*)p.second)->move(dt);
 		p.second->draw();
 	}
 

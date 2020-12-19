@@ -18,18 +18,42 @@ class Survivor : public Object
 		~Survivor();
 
 		void draw();
+		void move(float dt);
 
-		json getJson();
-		void setJson(json state);
 		Shader* getShader() const { return _shader; }
+		int getId() const { return _id; }
+		float getHealth() const { return _health; }
+		float getPower() const { return _power; }
+		std::string getName() const { return _name; }
+		bool getFly() const { return _fly; }
+		glm::vec3 getFront() const { return _front; }
+		int getMovingForward() const { return _movingForward; }
+		int getMovingLeft() const { return _movingLeft; }
+
+
+		void setId(int id) { _id = id; }
+		void setHealth(float health) { _health = health; }
+		void setPower(float power) { _power = power; }
+		void setName(std::string name) { _name = name; }
+		void setFly(bool fly) { _fly = fly; }
+		void setFront(glm::vec3 front) { _front = front; }
+		void setMovingForward(int movingForward) { _movingForward = movingForward; }
+		void setMovingLeft(int movingLeft) { _movingLeft = movingLeft; }
 
 		static Mesh* mesh;
 		static Texture* texture;
 
-		float getHealth() { return _health; }
-
 	private:
+		int _id;
 		float _health;
+		float _power;
+		std::string _name;
+
+		// Predict movement
+		bool _fly;
+		glm::vec3 _front;
+		int _movingForward;
+		int _movingLeft;
 };
 
 #endif// SURVIVOR_H

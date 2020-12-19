@@ -1,11 +1,13 @@
 #include "survivor.hpp"
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 Mesh* Survivor::mesh = nullptr;
 Texture* Survivor::texture = nullptr;
 
 Survivor::Survivor(Shader* shader, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale):
-	Object(shader, position, rotation, scale), _health(1.0f)
+	Object(shader, position, rotation, scale), _id(-1), _health(1.0f), _power(1.0f), _name("survivor"),
+	_fly(false), _front({0,0,0}), _movingForward(0), _movingLeft(0)
 {
 
 }
@@ -28,24 +30,18 @@ void Survivor::draw()
 	mesh->draw();
 }
 
-json Survivor::getJson()
+void Survivor::move(float dt)
 {
-	json result = {};
-	result["pos"] = {_position.x, _position.y, _position.z};
-	result["rot"] = {_rotation.x, _rotation.y, _rotation.z};
-	return result;
-}
+	glm::vec3 planeFront = _front;
+	if(!_fly)
+	{
+		planeFront.y = 0;
+		planeFront = glm::normalize(planeFront);
+	}
 
-void Survivor::setJson(json state)
-{
-	if(state == nullptr)
-		return;
+	float speed = 50.0f;
+	_position += planeFront* (speed*_movingForward) * dt;
+	_position += glm::normalize(glm::cross(_front, glm::vec3(0,1,0)))* (speed*_movingLeft) * dt;
 
-	_position.x = state["pos"][0];
-	_position.x = state["pos"][0];
-	_position.x = state["pos"][0];
-
-	_rotation.x = state["rot"][0];
-	_rotation.x = state["rot"][0];
-	_rotation.x = state["rot"][0];
+	std::cout << "CURR POSS " << glm::to_string(_position) << std::endl;
 }

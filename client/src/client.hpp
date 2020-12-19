@@ -43,7 +43,6 @@ class Client
 		void onMouseClick(int button, int action, int mods);
 		void onDraw(double dt);
 
-        // ???
 		GameState* _state;
 		GameObj* _player;
 		Semaphore* _sem;

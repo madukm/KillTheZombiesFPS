@@ -54,7 +54,6 @@ class ServerConnector
 	
 	~ServerConnector()
 	{
-		log->log(std::string("Client destroyed: ") + std::to_string(_socket), INFO);
         //TODO stop threads.
 		get_message_thread.join();
 		send_state_thread.join();
@@ -69,13 +68,9 @@ class ServerConnector
     // Get and enqueue message from client.
     void get_message()
     {
-        while (true)
+        while (_connected)
         {
             int read_size = read(_socket, get_message_buf, GameMessage::buf_size);
-            if(read_size == -1) {
-                printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
-            }
-            //printf("RECEIVED MESSAGE %s\n", get_message_buf);
 
 			if(read_size>0)
 			{
@@ -88,10 +83,9 @@ class ServerConnector
 			else
 			{
 				// Client disconnected
-				//log->log(std::string("Client disconnected: ") + std::to_string(_socket), INFO);
+				log->log(std::string("Client disconnected: ") + std::to_string(_socket), INFO);
 				_connected = false;
 			}
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
 
@@ -99,15 +93,18 @@ class ServerConnector
     void send_state()
     {
 		// TODO stop this thread when deleting object
-        while (true)
+        while (_connected)
         {
             strncpy(send_state_buf, _update_state.to_json().dump().c_str(), GameState::buf_size-1);
             log->log(std::string("Sending ") + send_state_buf, DEBUG);
-            int write_size = write(_socket, send_state_buf, GameState::buf_size);
-            if(write_size == -1) {
-                printf("Oh dear, something went wrong with write()! %s\n", strerror(errno));
-            }
-        	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			int write_size = write(_socket, send_state_buf, GameState::buf_size);
+			if(write_size<=0)
+			{
+				// Client disconnected
+				log->log(std::string("Client disconnected: ") + std::to_string(_socket), INFO);
+				_connected = false;
+			}
+        	std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 

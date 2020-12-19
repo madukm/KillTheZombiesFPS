@@ -42,7 +42,7 @@ int main()
 
     while(1) //Listen for connections.
     {
-
+		_logic.run();
     }
 
 	listen_connections_t.join();

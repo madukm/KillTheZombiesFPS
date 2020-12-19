@@ -24,6 +24,10 @@ class Camera
 		//---------- Getters and Setters ----------//
 		glm::vec3 getPosition() const { return _position; }
 		glm::vec3 getRotation() const { return glm::vec3(0,_yaw-90,0); }
+		glm::vec3 getFront() const { return _front; }
+		bool getFly() const { return _fly; }
+		int getMovingForward() const { return _movingForward; }
+		int getMovingLeft() const { return _movingLeft; }
 		void setPosition(glm::vec3 pos) { _position=pos; }
 		void setFront(glm::vec3 front) { _front=front; }
 		void setSceneBlocks(std::vector<Block*> blocks) { _sceneBlocks = blocks; }
