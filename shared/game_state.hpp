@@ -118,6 +118,7 @@ class GameState
     json to_json()
     {
         json ret;
+		ret["players"] = {};
 
         for (GameObj &_player : players)
         {

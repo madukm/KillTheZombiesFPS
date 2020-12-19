@@ -33,8 +33,7 @@ Client::Client()
     // Connection bootstraping
 
     //TODO add config file.
-	//_clientConnector = new ClientConnector(1337, "127.0.0.1");
-	_clientConnector = nullptr;
+	_clientConnector = new ClientConnector(1337, "127.0.0.1");
 
     sender_thread = std::thread(&Client::messageSender, this);
     receiver_thread = std::thread(&Client::stateReceiver, this);
@@ -173,45 +172,45 @@ void Client::messageSender()
 
 void Client::stateReceiver()
 {
-    //while(1)
-    //{
-    //    // Receive state from server and update on client.
-    //    // Parse game state
-    //    json j_state = _clientConnector->receive_game_state(); 
+    while(1)
+    {
+        // Receive state from server and update on client.
+        // Parse game state
+        json j_state = _clientConnector->receive_game_state(); 
 
-    //    GameState received_state = GameState::from_json(j_state);
+        GameState received_state = GameState::from_json(j_state);
 
-    //    std::set<int> local_id_players;
+        std::set<int> local_id_players;
 
-    //    for (auto player : _players)
-    //    {
-    //        local_id_players.insert(player.first);
-    //    }
+        for (auto player : _players)
+        {
+            local_id_players.insert(player.first);
+        }
 
-    //    // Update positions and rotations of everybody
-    //    for (GameObj player : received_state.players)
-    //    {
-    //        // Add spawned entities.            
-    //        if (local_id_players.count(player.get_id()) == 0)
-    //        {
-    //            _players[player.get_id()] = new Survivor(_shader);
-    //        }
-    //        else local_id_players.erase(player.get_id());
+        // Update positions and rotations of everybody
+        for (GameObj player : received_state.players)
+        {
+            // Add spawned entities.            
+            if (local_id_players.count(player.get_id()) == 0)
+            {
+                _players[player.get_id()] = new Survivor(_shader);
+            }
+            else local_id_players.erase(player.get_id());
 
-    //        Object* local_player = _players[player.get_id()];
+            Object* local_player = _players[player.get_id()];
 
-    //        local_player->setPosition(player.get_position());
-    //        local_player->setRotation(player.get_rotation());
-    //    }
+            local_player->setPosition(player.get_position());
+            local_player->setRotation(player.get_rotation());
+        }
 
-    //    // Remove dead entities.
-    //    for (int dead_player_id : local_id_players)
-    //    {
-    //        Object *dead_player_ptr = _players[dead_player_id];
-    //        delete dead_player_ptr;
-    //        _players.erase(dead_player_id);
-    //    }
-    //}
+        // Remove dead entities.
+        for (int dead_player_id : local_id_players)
+        {
+            Object *dead_player_ptr = _players[dead_player_id];
+            delete dead_player_ptr;
+            _players.erase(dead_player_id);
+        }
+    }
 }
 
 

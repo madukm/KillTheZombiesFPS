@@ -3,7 +3,6 @@
 
 #include "json.hpp"
 #include "game_state.hpp"
-#include "../client/src/render/camera.hpp"
 
 using json = nlohmann::json; 
 

@@ -1,4 +1,3 @@
-#include <vector>
 #include <thread>
 #include <chrono>
 #include <arpa/inet.h> 
@@ -45,6 +44,9 @@ class ClientConnector
         }
         //should throw an exception...
         update_buffer = new char[GameState::buf_size];
+
+		if(update_buffer == nullptr)
+			std::cout << "BUFFER NULO CONSTRUCTOR!!" << std::endl; 
 	}
 	
 	~ClientConnector()
@@ -81,6 +83,8 @@ class ClientConnector
 
     json receive_game_state() //ptr to game state maybe
     {
+		if(update_buffer == nullptr)
+			std::cout << "BUFFER NULO!!" << std::endl;
         //TODO add logger messages here.
         memset(update_buffer, 0, GameState::buf_size);
 
