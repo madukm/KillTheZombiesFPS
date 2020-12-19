@@ -31,7 +31,7 @@ Client::Client()
 
     // Connection bootstraping
     //TODO add config file.
-	_clientConnector = new ClientConnector(1338, "127.0.0.1");
+	_clientConnector = new ClientConnector(1338, "18.218.11.188");
     _this_player_id = _clientConnector->send_init_sequence("maoe");
     _player = new GameObj();
 
@@ -181,7 +181,7 @@ void Client::messageSender() //This is a thread
         }
 
         _clientConnector->send_game_message(sent_message.to_json());
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 }
 
@@ -192,6 +192,8 @@ void Client::stateReceiver()
         // Receive state from server and update on client.
         // Parse game state
         json j_state = _clientConnector->receive_game_state(); 
+		if(j_state.empty())
+			continue;
 
         GameState received_state = GameState::from_json(j_state);
         //_this_player_id = GameState._player_id; //Setting self id.
