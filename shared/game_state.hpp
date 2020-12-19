@@ -52,13 +52,13 @@ class GameObj
     json to_json()
     {
         json ret;
-		ret["position"] ={ _position.x, _position.y, _position.z };
-        ret["rotation"] ={ _rotation.x, _rotation.y, _rotation.z };
-
-        ret["health"] = health;
-        ret["power"] = power;	
         ret["id"] = id;	
         ret["name"] = name;	
+        ret["health"] = health;
+        ret["power"] = power;	
+
+		ret["position"] ={ _position.x, _position.y, _position.z };
+        ret["rotation"] ={ _rotation.x, _rotation.y, _rotation.z };
 		
 		return ret;
     }
