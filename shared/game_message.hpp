@@ -1,5 +1,8 @@
+#ifndef GAME_MESSAGE_H
+#define GAME_MESSAGE_H
+
 #include "json.hpp"
-#include "gamestate.hpp"
+#include "game_state.hpp"
 #include "../client/src/render/camera.hpp"
 
 using json = nlohmann::json; 
@@ -14,14 +17,15 @@ enum message_type
 
 class GameMessage
 {
-public:
+    public:
+
+    static const int buf_size = 1000;
+
 	GameMessage(){};
 	GameMessage(int idPlayer):
 		game_obj(idPlayer)
 	{}
 	
-	int getIdPlayer(){ return game_obj.get_id(); }
-
 	static GameMessage from_json(json parsed_obj)
 	{
 		GameMessage ret;
@@ -33,8 +37,9 @@ public:
 			ret._type = MOVE;
 			ret.game_obj.from_json(parsed_obj);
 			ret._hitPlayer = parsed_obj["hitPlayer"];
-		
 		}
+
+		return ret;
 	}
  	
 	json to_json()
@@ -47,10 +52,13 @@ public:
 		if(_type == HIT){
 			ret["hitPlayer"] = _hitPlayer;
 		}
+
+		return ret;
 	}
 
-private:
 	GameObj game_obj;
 	message_type _type;
 	unsigned int _hitPlayer;
 };
+
+#endif

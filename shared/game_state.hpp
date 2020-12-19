@@ -85,13 +85,13 @@ private:
 	glm::vec3 _position;
 	glm::vec3 _rotation;
 	
-    obj_type type;
+    //obj_type type;
 };
 
 
 class GameState
 {
-public:
+    public:
 
     static const int buf_size = 2000;
 
@@ -112,9 +112,6 @@ public:
 			ret.players.push_back(_obj);
 		}
 
-        ret.spawned_ids = parsed_state["spawned_ids"].get<std::vector<int>>();
-        ret.killed_ids = parsed_state["killed_ids"].get<std::vector<int>>();
-
         return ret;
     }
 
@@ -127,15 +124,10 @@ public:
 		    ret["players"].push_back(_player.to_json());
         }
 
-        ret["spawned_ids"] = json(spawned_ids);
-        ret["killed_ids"] = json(killed_ids);
-
         return ret;
     }
 
     std::vector<GameObj> players;
-    std::vector<int> spawned_ids;
-    std::vector<int> killed_ids;
 };
 
 #endif

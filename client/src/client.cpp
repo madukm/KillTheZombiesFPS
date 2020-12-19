@@ -4,6 +4,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <set>
+
 Client::Client()
 {
     _window = new Window("Kill the Zombies");
@@ -237,25 +239,35 @@ void Client::stateReceiver()
 
         GameState received_state = GameState::from_json(j_state);
 
-        // Remove dead entities.
-        for (int killed : received_state.killed_ids)
+        std::set<int> local_id_players;
+
+        for (auto player : _players)
         {
-            _players.erase(killed);
-        }
-    
-        // Add spawned entities.
-        for (int spawned : received_state.spawned_ids)
-        {
-            _players[spawned] = new Survivor(_shader);
+            local_id_players.insert(player.first);
         }
 
         // Update positions and rotations of everybody
-        for (GameObj player: received_state.players)
+        for (GameObj player : received_state.players)
         {
+            // Add spawned entities.            
+            if (local_id_players.count(player.get_id()) == 0)
+            {
+                _players[player.get_id()] = new Survivor(_shader);
+            }
+            else local_id_players.erase(player.get_id());
+
             Object* local_player = _players[player.get_id()];
 
             local_player->setPosition(player.get_position());
             local_player->setRotation(player.get_rotation());
+        }
+
+        // Remove dead entities.
+        for (int dead_player_id : local_id_players)
+        {
+            Object *dead_player_ptr = _players[dead_player_id];
+            delete dead_player_ptr;
+            _players.erase(dead_player_id);
         }
     }
 }

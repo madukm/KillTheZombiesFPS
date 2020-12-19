@@ -62,7 +62,11 @@ class Semaphore
     Semaphore (int _count)
     : count(_count) 
     {}
-    
+ 
+    Semaphore ()
+    : count(1) 
+    {}
+   
     inline void up()
     {
         std::unique_lock<std::mutex> lock(mtx);

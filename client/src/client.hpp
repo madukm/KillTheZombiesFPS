@@ -1,12 +1,13 @@
 #ifndef CLIENT_H
 #define CLIENT_H
+
 #include <iostream>
 #include <chrono>
 #include <thread>
 #include <vector>
 
 #include "clientConnector.hpp"
-#include "../../shared/gamestate.hpp" //TODO add in cmake to include <gamestate.hpp>
+#include "../../shared/game_state.hpp" //TODO add in cmake to include <gamestate.hpp>
 #include "../../shared/semaphore.hpp"
 #include "../../shared/logger.hpp"
 #include "render/window.hpp"

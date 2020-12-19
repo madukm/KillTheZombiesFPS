@@ -11,7 +11,7 @@
 #include "../../shared/semaphore.hpp"
 #include "../../shared/json.hpp"
 #include "../../shared/logger.hpp"
-#include "../../shared/gamestate.hpp"
+#include "../../shared/game_state.hpp"
 
 using json = nlohmann::json; 
 
