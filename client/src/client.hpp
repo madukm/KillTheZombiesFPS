@@ -5,6 +5,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <queue>
 
 #include "clientConnector.hpp"
 #include "../../shared/game_state.hpp" //TODO add in cmake to include <gamestate.hpp>
@@ -32,6 +33,10 @@ class Client
 		void loadAssets();
 		void createWorld();
 
+        // Server connection
+        void messageSender();
+        void stateReceiver();
+
 		//---------- Callbacks ----------//
 		void onKey(int key, int scancode, int action, int mods);
 		void onMouse(double xpos, double ypos);
@@ -58,10 +63,6 @@ class Client
 		
         std::unordered_map<int, Object*> _players;
         std::vector<Zombie*> _zombies;
-
-        // Server connection
-        void messageSender();
-        void stateReceiver();
 
         std::thread sender_thread;
         std::thread receiver_thread;

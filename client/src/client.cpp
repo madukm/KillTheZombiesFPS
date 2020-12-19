@@ -33,7 +33,7 @@ Client::Client()
     // Connection bootstraping
 
     //TODO add config file.
-	_clientConnector = new ClientConnector(1337, "127.0.0.1");
+	_clientConnector = new ClientConnector(1338, "127.0.0.1");
 
     //_this_player_id = _clientConnector.get_id();
 
@@ -161,22 +161,22 @@ void Client::createWorld()
 
 void Client::messageSender() //This is a thread
 {
-    GameMessage sent_message;
+    //GameMessage sent_message;
 
-    while(1)
-    {
-        //Dequeue from messages.
-        if (!message_queue.empty())
-        {
-            //Do this stuff
-            //_clientConnector.
-        }
-        else
-        {
-            sent_message._type = MOVE;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
+    //while(1)
+    //{
+    //    //Dequeue from messages.
+    //    if (!message_queue.empty())
+    //    {
+    //        //Do this stuff
+    //        //_clientConnector.
+    //    }
+    //    else
+    //    {
+    //        sent_message._type = MOVE;
+    //    }
+    //    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    //}
 }
 
 void Client::stateReceiver()
@@ -188,7 +188,7 @@ void Client::stateReceiver()
         json j_state = _clientConnector->receive_game_state(); 
 
         GameState received_state = GameState::from_json(j_state);
-        _this_player_id = GameState._player_id; //Setting self id.
+        //_this_player_id = GameState._player_id; //Setting self id.
 
         std::set<int> local_id_players;
 

@@ -2,6 +2,7 @@
 #include "../../shared/game_message.hpp"
 #include "server_connector.hpp"
 #include "../../shared/semaphore.hpp"
+#include "../../shared/logger.hpp"
 
 #include <queue>
 
@@ -14,71 +15,76 @@ class ServerLogic
 	public:
  
     ServerLogic()
-    {}
+    {
+		_log = new Logger("ServerLogic");
+	}
 
     ~ServerLogic()
     {
         //Freeing server.
-        for (ServerConnector* client : active_clients)
+        for (auto client : active_clients)
         {
             //Terminate thread, run destructor...
-            delete client;
+			if(client.second != nullptr)
+            	delete client.second;
         }
+
+		delete _log;
     }
 
     //different thread
     void run()
     {
-        GameMessage received_message;
-        bool new_message;
+        //GameMessage received_message;
+        //bool new_message;
 
-        while(1)
-        {
-            message_queue_semaphore.down();
-            if (!message_queue.empty())
-            {
-                received_message = message_queue.front();
-                message_queue.pop();
-                new_message = true;
-            } else new_message = false;
-            message_queue_semaphore.up();
+        //while(1)
+        //{
+        //    message_queue_semaphore.down();
+        //    if (!message_queue.empty())
+        //    {
+        //        received_message = message_queue.front();
+        //        message_queue.pop();
+        //        new_message = true;
+        //    } else new_message = false;
+        //    message_queue_semaphore.up();
 
-            if (new_message)
-            {
-                //tratar msg
-                switch (received_message._type)
-                {
-                    case MOVE:
-                    {
-                        GameObj &temp_obj = 
-                            _players[received_message.game_obj.get_id()];
-                        temp_obj.set_position(received_message.game_obj.get_position());
-                        temp_obj.set_rotation(received_message.game_obj.get_rotation());
-                        break;
-                    }
+        //    if (new_message)
+        //    {
+        //        //tratar msg
+        //        switch (received_message._type)
+        //        {
+        //            case MOVE:
+        //            {
+        //                GameObj &temp_obj = 
+        //                    _players[received_message._game_obj.get_id()];
+        //                temp_obj.set_position(received_message._game_obj.get_position());
+        //                temp_obj.set_rotation(received_message._game_obj.get_rotation());
+        //                break;
+        //            }
 
-                    case HIT:
-                        //Encontrou no state
-                        //MAtou alguem.
-                        //killed_ids.push_back(iddequemmooreu);
+        //            case HIT:
+        //                //Encontrou no state
+        //                //MAtou alguem.
+        //                //killed_ids.push_back(iddequemmooreu);
 
-                    default:
-                        break;
-                }
-            }
+        //            default:
+        //                break;
+        //        }
+        //    }
 
-            //spawn zombies.
-            //altera gamestate
-            
-            //notifica os clientes.
-            for (auto client : active_clients)
-            {
-                //notify client
-                GameState temp_state;
-                temp_state._player_id = client.first;
-                client.second->_update_queue.push();
-            }
-        }
+        //    //spawn zombies.
+        //    //altera gamestate
+        //    
+        //    //notifica os clientes.
+        //    for (auto client : active_clients)
+        //    {
+        //        //notify client
+        //        GameState temp_state;
+        //        //temp_state._player_id = client.first;
+        //        //client.second->_update_queue.push();
+        //    }
+        //}
     }
 
     void add_client(int new_client_descriptor)
@@ -91,23 +97,36 @@ class ServerLogic
                                               message_queue,
                                               message_queue_semaphore,
                                               _state);
-
-        int new_id;
-        do
-         {
-             /* code */
-         } while (active_clients.count(new_id) != 0); 
         
-        active_clients[new_id] = temp_new_client;
-
-        //simply send the value to the client.
+        active_clients[new_client_descriptor] = temp_new_client;
+		_state.players.push_back(GameObj(new_client_descriptor));
     }
+
+	void delete_disconnected()
+	{
+		for(auto client : active_clients)
+		{
+			if(client.second->get_connected() == false)
+			{
+				delete client.second;
+				active_clients.erase(client.first);
+
+				for(int i=0; i<(int)_state.players.size(); i++)
+				{
+					if(_state.players[i].get_id() == client.first)
+					{
+						_state.players.erase(_state.players.begin()+i);
+					}
+				}
+			}
+		}
+	}
 
     private:
 
-    std::unordered_map<int, GameObj> _players;
     std::unordered_map<int, ServerConnector*> active_clients;
     std::queue<GameMessage> message_queue; //kiwi
     Semaphore message_queue_semaphore;
     GameState _state;
+	Logger* _log;
 };

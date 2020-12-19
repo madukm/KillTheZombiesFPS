@@ -190,8 +190,6 @@ bool Camera::detectCollision(glm::vec3 position)
 
 	for(auto block : _sceneBlocks)
 	{
-		std::cout << "------ " << std::endl;
-
 		glm::vec3 position = block->getPosition();
 		glm::vec3 rotation = block->getRotation();
 		glm::vec3 scale = block->getScale();
@@ -270,25 +268,25 @@ bool overlapOnAxis(CollisionBox one, CollisionBox two, glm::vec3 axis, glm::vec3
     // Project this onto the axis
     float distance = glm::dot(toCenter, axis);
 
-	std::cout << "----------" << std::endl;
-	std::cout << "One" << std::endl;
-	std::cout << "0: " << glm::to_string(one.axis0) << std::endl;
-	std::cout << "1: " << glm::to_string(one.axis1) << std::endl;
-	std::cout << "2: " << glm::to_string(one.axis2) << std::endl;
-	std::cout << "Two" << std::endl;
-	std::cout << "0: " << glm::to_string(two.axis0) << std::endl;
-	std::cout << "1: " << glm::to_string(two.axis1) << std::endl;
-	std::cout << "2: " << glm::to_string(two.axis2) << std::endl;
-	std::cout << "Axis " << glm::to_string(axis) << std::endl;
+	//std::cout << "----------" << std::endl;
+	//std::cout << "One" << std::endl;
+	//std::cout << "0: " << glm::to_string(one.axis0) << std::endl;
+	//std::cout << "1: " << glm::to_string(one.axis1) << std::endl;
+	//std::cout << "2: " << glm::to_string(one.axis2) << std::endl;
+	//std::cout << "Two" << std::endl;
+	//std::cout << "0: " << glm::to_string(two.axis0) << std::endl;
+	//std::cout << "1: " << glm::to_string(two.axis1) << std::endl;
+	//std::cout << "2: " << glm::to_string(two.axis2) << std::endl;
+	//std::cout << "Axis " << glm::to_string(axis) << std::endl;
 
-	std::cout << "One Proj " << oneProject << std::endl;
-	std::cout << "Two Proj " << twoProject << std::endl;
-	std::cout << "Distance " << distance << std::endl;
-	std::cout << distance << " <= " << oneProject << " + " << twoProject << std::endl;
-	if((distance <= oneProject + twoProject) == false)
-	{
-		std::cout << "!!!!!!!" << std::endl;
-	}
+	//std::cout << "One Proj " << oneProject << std::endl;
+	//std::cout << "Two Proj " << twoProject << std::endl;
+	//std::cout << "Distance " << distance << std::endl;
+	//std::cout << distance << " <= " << oneProject << " + " << twoProject << std::endl;
+	//if((distance <= oneProject + twoProject) == false)
+	//{
+	//	std::cout << "!!!!!!!" << std::endl;
+	//}
 
     // Check for overlap
     return (distance <= oneProject + twoProject);

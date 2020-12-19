@@ -46,47 +46,43 @@ class ClientConnector
         }
         //should throw an exception...
         update_buffer = new char[GameState::buf_size];
-
-		if(update_buffer == nullptr)
-			std::cout << "BUFFER NULO CONSTRUCTOR!!" << std::endl; 
 	}
 	
 	~ClientConnector()
 	{
 		close(sd);
+
 	}
 
     int send_init_sequence() //Asks server for a slot.
     {
-        //Get info and update state.
-        json j_message;
-        j_message["type"] = 2; //Init
+        ////Get info and update state.
+        //json j_message;
+        //j_message["type"] = 2; //Init
 
-        memset(update_buffer, 0, GameState::buf_size);
-        strncpy(update_buffer, j_message.dump().c_str(), GameState::buf_size-1);
-        
-        write(sd, update_buffer, GameState::buf_size); 
-        read(sd, update_buffer, GameState::buf_size);
+        //memset(update_buffer, 0, GameState::buf_size);
+        //strncpy(update_buffer, j_message.dump().c_str(), GameState::buf_size-1);
+        //
+        //write(sd, update_buffer, GameState::buf_size); 
+        //read(sd, update_buffer, GameState::buf_size);
 
-        //got slot...
-        return json::parse(update_buffer)["new_id"];
+        ////got slot...
+        //return json::parse(update_buffer)["new_id"];
+		return 0;
     }
-
 
     void send_game_message(json &j_message)
     {
-        memset(update_buffer, 0, GameState::buf_size);
-        strncpy(update_buffer, j_message.dump().c_str(), GameState::buf_size-1);
+        //memset(update_buffer, 0, GameState::buf_size);
+        //strncpy(update_buffer, j_message.dump().c_str(), GameState::buf_size-1);
 
-        //Send over tcp.
-        write(sd, update_buffer, GameState::buf_size); 
-        client_connector_logger.log("Sent data!", log_type::DEBUG);
+        ////Send over tcp.
+        //write(sd, update_buffer, GameState::buf_size); 
+        //client_connector_logger.log("Sent data!", log_type::DEBUG);
     }
 
     json receive_game_state() //ptr to game state maybe
     {
-		if(update_buffer == nullptr)
-			std::cout << "BUFFER NULO!!" << std::endl;
         //TODO add logger messages here.
         memset(update_buffer, 0, GameState::buf_size);
 
@@ -94,9 +90,21 @@ class ClientConnector
         //In this implementation, server is always right. (i suppose)
         read(sd, update_buffer, GameState::buf_size);
 
-        client_connector_logger.log("Received state", log_type::DEBUG);
 
-        return json::parse(update_buffer);
+		json result;
+		try
+		{
+			result = json::parse(update_buffer);
+        	client_connector_logger.log(std::string("Received state: ")+update_buffer, log_type::INFO);
+		}
+		catch(std::exception& e)
+		{
+			// Bad json format
+			//std::cout << e. << std::endl;
+			client_connector_logger.log(std::string("Bad json format received: ") + update_buffer, WARN);
+		}
+
+        return result;
     }
 };
 

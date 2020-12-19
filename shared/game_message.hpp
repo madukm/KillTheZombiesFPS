@@ -21,23 +21,22 @@ class GameMessage
 
     static const int buf_size = 1000;
 
-	GameMessage(){};
-	
-	GameMessage(int idPlayer, GameObj game_obj):
+	GameMessage(GameObj game_obj):
+		_game_obj(game_obj)
 	{
-		_game_obj = game_obj;
 	}
 	
 	static GameMessage from_json(json parsed_obj)
 	{
-		GameMessage ret;
+		GameObj gameObj = GameObj::from_json(parsed_obj);
+
+		GameMessage ret(gameObj);
+
 		if(parsed_obj["type"] == HIT){
 			ret._type = HIT;
-			ret._game_obj.from_json(parsed_obj);
 		}
 		else if(parsed_obj["type"] == MOVE){
 			ret._type = MOVE;
-			ret._game_obj.from_json(parsed_obj);
 			ret._hitPlayer = parsed_obj["hitPlayer"];
 		}
 

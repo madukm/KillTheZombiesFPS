@@ -17,6 +17,7 @@
 #include "../../shared/game_state.hpp"
 #include "../../shared/game_message.hpp"
 #include "../../shared/semaphore.hpp"
+#include "../../shared/logger.hpp"
 
 /* This class represents an active client
  * to the server perspective.
@@ -35,23 +36,33 @@ class ServerConnector
         _socket(socket),
         _m_queue(m_queue),
         _m_queue_semaphore(m_queue_semaphore),
-        _update_state(update_state)
+        _update_state(update_state),
+		_connected(true)
     {
+		log = new Logger("ServerConnector");
+		log->log(std::string("Client connected: ") + std::to_string(socket), INFO);
+
         get_message_buf = new char[GameMessage::buf_size];
         send_state_buf = new char[GameState::buf_size];
 
         get_message_thread = std::thread(&ServerConnector::get_message, this);
         send_state_thread = std::thread(&ServerConnector::send_state, this);
+
     }
 	
 	~ServerConnector()
 	{
-		close(_socket);
+		log->log(std::string("Client destroyed: ") + std::to_string(_socket), INFO);
+        //TODO stop threads.
+		get_message_thread.join();
+		send_state_thread.join();
 
         delete get_message_buf;
         delete send_state_buf;
+		delete log;
 
-        //TODO join threads.
+		close(_socket);
+
 	}
 
     // Get and enqueue message from client.
@@ -59,42 +70,53 @@ class ServerConnector
     {
         while (true)
         {
-            read(_socket, get_message_buf, GameMessage::buf_size);
-            GameMessage aux = GameMessage::from_json(json::parse(get_message_buf));
+            int read_size = read(_socket, get_message_buf, GameMessage::buf_size);
+			if(read_size>0)
+			{
+				GameMessage aux = GameMessage::from_json(json::parse(get_message_buf));
 
-            _m_queue_semaphore.down();
-            _m_queue.push(aux);
-            _m_queue_semaphore.up();
+				_m_queue_semaphore.down();
+				_m_queue.push(aux);
+				_m_queue_semaphore.up();
+			}
+			else
+			{
+				// Client disconnected
+				//log->log(std::string("Client disconnected: ") + std::to_string(_socket), INFO);
+				_connected = false;
+			}
         }
     }
 
     // Sends GameState to client.
     void send_state()
     {
+		// TODO stop this thread when deleting object
         while (true)
         {
-            if (!_update_queue.empty())
-            {
-                strncpy(send_state_buf, _update_queue.front().to_json().dump().c_str(), GameState::buf_size-1);
-                _update_queue.pop();
-                printf("SEND JSON >>> %s\n", send_state_buf);
-                write(_socket, send_state_buf, GameState::buf_size-1);
-            }
+            strncpy(send_state_buf, _update_state.to_json().dump().c_str(), GameState::buf_size-1);
+            printf("SEND JSON >>> %s\n", send_state_buf);
+            write(_socket, send_state_buf, GameState::buf_size-1);
+        	std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
+
+	bool get_connected() const { return _connected; }
 
     private:
 
 	int _socket; //socket descriptor
-
-    std::queue<GameMessage> &_m_queue; //Message queue to server.
+    std::queue<GameMessage> &_m_queue;
     Semaphore &_m_queue_semaphore;
-    
-    std::queue<_update_state> _update_queue;
+    GameState &_update_state; //Game reference
     
     char *get_message_buf;
     char *send_state_buf;
 
     std::thread get_message_thread;
     std::thread send_state_thread;
+
+	Logger* log;
+
+	bool _connected;
 };
