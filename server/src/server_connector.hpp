@@ -74,7 +74,19 @@ class ServerConnector
 
 			if(read_size>0)
 			{
-				GameMessage aux = GameMessage::from_json(json::parse(get_message_buf));
+				json message_json;
+				try
+				{
+					message_json = json::parse(get_message_buf);
+				}
+				catch(std::exception& e)
+				{
+	
+				}
+				if(message_json.empty())
+					continue;
+
+				GameMessage aux = GameMessage::from_json();
 
 				_m_queue_semaphore.down();
 				_m_queue.push(aux);

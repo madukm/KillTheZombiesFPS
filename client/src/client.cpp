@@ -168,6 +168,8 @@ void Client::messageSender() //This is a thread
 
     while(1)
     {
+		//------------ Send 
+
         //Dequeue from messages.
         if(!message_queue.empty())
         {
@@ -179,18 +181,9 @@ void Client::messageSender() //This is a thread
             sent_message._type = MOVE;
             sent_message._game_obj = *_player;
         }
-
         _clientConnector->send_game_message(sent_message.to_json());
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    }
-}
 
-void Client::stateReceiver()
-{
-    while(1)
-    {
-        // Receive state from server and update on client.
-        // Parse game state
+		//------------ Receive 
         json j_state = _clientConnector->receive_game_state(); 
 		if(j_state.empty())
 			continue;
@@ -241,6 +234,15 @@ void Client::stateReceiver()
             delete dead_player_ptr;
             _players.erase(dead_player_id);
         }
+    }
+}
+
+void Client::stateReceiver()
+{
+    while(1)
+    {
+        // Receive state from server and update on client.
+        // Parse game state
     }
 }
 
