@@ -34,6 +34,7 @@ void UI::draw()
 	_shader->setProcessLight(false);
 	for(auto zombie : _zombies)
 	{
+		float life = zombie->getHealth();
 		// TODO use camera position to rotate
 		// TODO calculate life bar foreground
 		//---------- Life bar background ----------//
@@ -47,14 +48,14 @@ void UI::draw()
 		_meshes[0]->draw();
 
 		//---------- Life bar foreground ----------//
-		//_shader->setColor(glm::vec3(0.2,1.0,0.2));
-		//mat = zombie->getModelMat();
-		//mat = glm::translate(mat, glm::vec3(0,2.5,0));
-		//mat = glm::scale(mat, glm::vec3(2,.2,1));
-		//mat = glm::transpose(mat);
-		//glUniformMatrix4fv(_shader->getModelLocation(), 1, GL_TRUE, glm::value_ptr(mat));
+		_shader->setColor(glm::vec3(0.2,1.0,0.2));
+		mat = zombie->getModelMat();
+		mat = glm::translate(mat, glm::vec3(-2*(1-life),2.5,.01));
+		mat = glm::scale(mat, glm::vec3(2*life,.2,1));
+		mat = glm::transpose(mat);
+		glUniformMatrix4fv(_shader->getModelLocation(), 1, GL_TRUE, glm::value_ptr(mat));
 
-		//_meshes[0]->draw();
+		_meshes[0]->draw();
 	}
 
 

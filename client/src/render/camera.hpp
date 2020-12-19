@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include "../../../shared/logger.hpp"
+#include "../objects/survivor.hpp"
 
 class Block;
 
@@ -26,9 +27,11 @@ class Camera
 		void setPosition(glm::vec3 pos) { _position=pos; }
 		void setFront(glm::vec3 front) { _front=front; }
 		void setSceneBlocks(std::vector<Block*> blocks) { _sceneBlocks = blocks; }
+		void setPlayer(Survivor* player) { _player = player; }
 
 	private:
 		// Check if the position is colliding with any block
+		glm::mat4 getModelMat();
 		bool detectCollision(glm::vec3 position);
 
 		glm::vec3 _position;
@@ -54,6 +57,7 @@ class Camera
 		bool _fly;
 		bool _collisionDetection;
 		std::vector<Block*> _sceneBlocks;
+		Survivor* _player;
 
 		Logger* _log;
 };

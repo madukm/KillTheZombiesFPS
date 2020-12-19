@@ -6,12 +6,14 @@
 #include "../objects/block.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
+
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "camera.hpp"
 
 Camera::Camera(float windowRatio):
-	_ratio(windowRatio), _firstMouse(true), _fly(false), _collisionDetection(true)
+	_ratio(windowRatio), _firstMouse(true), _fly(false), _collisionDetection(true), _player(nullptr)
 {
 	_position = {0,1.8,10};
 	_up = {0,1,0};
@@ -166,20 +168,128 @@ const float* Camera::getProjection()
 	return glm::value_ptr(_projection);
 }
 
-
 //------------------------------//
 //----- Collision Detection ----//
 //------------------------------//
+
+struct CollisionBox
+{
+	glm::vec3 size;
+	glm::vec3 axis0;
+	glm::vec3 axis1;
+	glm::vec3 axis2;
+};
+
+bool overlapOnAxis(CollisionBox one, CollisionBox two, glm::vec3 axis, glm::vec3 toCenter);
+float transformToAxis(CollisionBox box, glm::vec3 axis);
+
 bool Camera::detectCollision(glm::vec3 position)
 {
+	if(_player==nullptr)
+		return false;
+
 	for(auto block : _sceneBlocks)
 	{
+		std::cout << "------ " << std::endl;
+
 		glm::vec3 position = block->getPosition();
-		glm::vec3 rotatino = block->getRotation();
+		glm::vec3 rotation = block->getRotation();
 		glm::vec3 scale = block->getScale();
 
-		// TODO calculate using separating axis theorem
+		// Block collision box info
+		glm::mat4 model = block->getModelMat();
+		CollisionBox blockBox = {
+			block->getScale(),
+			glm::vec3(model[0][0], model[1][0], model[2][0]),
+			glm::vec3(model[0][1], model[1][1], model[2][1]),
+			glm::vec3(model[0][2], model[1][2], model[2][2])
+		};
+
+		// Player collision box info
+		glm::mat4 modelCamera = _player->getModelMat();
+		CollisionBox playerBox = {
+			block->getScale(),
+			glm::vec3(modelCamera[0][0], modelCamera[1][0], modelCamera[2][0]),
+			glm::vec3(modelCamera[0][1], modelCamera[1][1], modelCamera[2][1]),
+			glm::vec3(modelCamera[0][2], modelCamera[1][2], modelCamera[2][2])
+		};
+
+		// Vector between the two centres
+		glm::vec3 toCenter = position - _position;
+
+		// Calculating collision between boxes using separating axis theorem
+
+		// Check block box axes
+		bool boxAxes = overlapOnAxis(blockBox, playerBox, blockBox.axis0, toCenter) &&
+				overlapOnAxis(blockBox, playerBox, blockBox.axis1, toCenter) &&
+				overlapOnAxis(blockBox, playerBox, blockBox.axis2, toCenter);
+
+		// Check player box axes
+		bool playerAxes = overlapOnAxis(blockBox, playerBox, playerBox.axis0, toCenter) &&
+				overlapOnAxis(blockBox, playerBox, playerBox.axis1, toCenter) &&
+				overlapOnAxis(blockBox, playerBox, playerBox.axis2, toCenter);
+		
+		// Check cross product axes
+		bool crossAxes = overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis0, playerBox.axis0), toCenter) &&
+						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis0, playerBox.axis1), toCenter) &&
+						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis0, playerBox.axis2), toCenter) &&
+
+						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis1, playerBox.axis0), toCenter) &&
+						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis1, playerBox.axis1), toCenter) &&
+						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis1, playerBox.axis2), toCenter) &&
+						
+						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis2, playerBox.axis0), toCenter) &&
+						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis2, playerBox.axis1), toCenter) &&
+						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis2, playerBox.axis2), toCenter);
+
+		
+		// If overlap in all axes, the boxes are colliding
+		if(boxAxes && playerAxes && crossAxes)
+			return true;
+
+		break;
 	}
 
 	return false;
+}
+
+float transformToAxis(CollisionBox box, glm::vec3 axis)
+{
+    return
+        box.size.x * abs(glm::dot(axis, box.axis0)) +
+        box.size.y * abs(glm::dot(axis, box.axis1)) +
+        box.size.z * abs(glm::dot(axis, box.axis2));
+}
+
+bool overlapOnAxis(CollisionBox one, CollisionBox two, glm::vec3 axis, glm::vec3 toCenter)
+{
+    // Project the half-size of one onto axis
+    float oneProject = transformToAxis(one, axis);
+    float twoProject = transformToAxis(two, axis);
+
+    // Project this onto the axis
+    float distance = glm::dot(toCenter, axis);
+
+	std::cout << "----------" << std::endl;
+	std::cout << "One" << std::endl;
+	std::cout << "0: " << glm::to_string(one.axis0) << std::endl;
+	std::cout << "1: " << glm::to_string(one.axis1) << std::endl;
+	std::cout << "2: " << glm::to_string(one.axis2) << std::endl;
+	std::cout << "Two" << std::endl;
+	std::cout << "0: " << glm::to_string(two.axis0) << std::endl;
+	std::cout << "1: " << glm::to_string(two.axis1) << std::endl;
+	std::cout << "2: " << glm::to_string(two.axis2) << std::endl;
+	std::cout << "Axis " << glm::to_string(axis) << std::endl;
+
+	std::cout << "One Proj " << oneProject << std::endl;
+	std::cout << "Two Proj " << twoProject << std::endl;
+	std::cout << "Distance " << distance << std::endl;
+	std::cout << distance << " <= " << oneProject << " + " << twoProject << std::endl;
+	if((distance <= oneProject + twoProject) == false)
+	{
+		std::cout << "!!!!!!!" << std::endl;
+	}
+
+    // Check for overlap
+    return (distance <= oneProject + twoProject);
 }

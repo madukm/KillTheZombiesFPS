@@ -21,6 +21,11 @@ class Zombie : public Object
 
 		static Mesh* mesh;
 		static Texture* texture;
+
+		float getHealth() { return _health; }
+
+	private:
+		float _health;
 };
 
 #endif// ZOMBIE_H

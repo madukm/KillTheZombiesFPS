@@ -5,7 +5,7 @@ Mesh* Survivor::mesh = nullptr;
 Texture* Survivor::texture = nullptr;
 
 Survivor::Survivor(Shader* shader, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale):
-	Object(shader, position, rotation, scale)
+	Object(shader, position, rotation, scale), _health(1.0f)
 {
 
 }

@@ -150,9 +150,10 @@ void Client::createWorld()
 	_sceneZero = new SceneZero(_shader);
 	_camera->setSceneBlocks(_sceneZero->getBlocks());
 
+	_players[0] = new Survivor(_shader, {0,0,0}, {0,0,0}, {0.5,0.5,0.5});
+	_camera->setPlayer((Survivor*)_players[0]);
 	_zombies.push_back(new Zombie(_shader, {0,1,2}, {0,0,0}, {0.5,0.5,0.5}));
 }
-
 
 void Client::messageSender()
 {
@@ -172,35 +173,45 @@ void Client::messageSender()
 
 void Client::stateReceiver()
 {
-    while(0)
-    {
-        // Receive state from server and update on client.
-        // Parse game state
-        json j_state = _clientConnector->receive_game_state(); 
+    //while(1)
+    //{
+    //    // Receive state from server and update on client.
+    //    // Parse game state
+    //    json j_state = _clientConnector->receive_game_state(); 
 
-        GameState received_state = GameState::from_json(j_state);
+    //    GameState received_state = GameState::from_json(j_state);
 
-        // Remove dead entities.
-        for (int killed : received_state.killed_ids)
-        {
-            _players.erase(killed);
-        }
-    
-        // Add spawned entities.
-        for (int spawned : received_state.spawned_ids)
-        {
-            _players[spawned] = new Survivor(_shader);
-        }
+    //    std::set<int> local_id_players;
 
-        // Update positions and rotations of everybody
-        for (GameObj player: received_state.players)
-        {
-            Object* local_player = _players[player.get_id()];
+    //    for (auto player : _players)
+    //    {
+    //        local_id_players.insert(player.first);
+    //    }
 
-            local_player->setPosition(player.get_position());
-            local_player->setRotation(player.get_rotation());
-        }
-    }
+    //    // Update positions and rotations of everybody
+    //    for (GameObj player : received_state.players)
+    //    {
+    //        // Add spawned entities.            
+    //        if (local_id_players.count(player.get_id()) == 0)
+    //        {
+    //            _players[player.get_id()] = new Survivor(_shader);
+    //        }
+    //        else local_id_players.erase(player.get_id());
+
+    //        Object* local_player = _players[player.get_id()];
+
+    //        local_player->setPosition(player.get_position());
+    //        local_player->setRotation(player.get_rotation());
+    //    }
+
+    //    // Remove dead entities.
+    //    for (int dead_player_id : local_id_players)
+    //    {
+    //        Object *dead_player_ptr = _players[dead_player_id];
+    //        delete dead_player_ptr;
+    //        _players.erase(dead_player_id);
+    //    }
+    //}
 }
 
 
@@ -287,63 +298,4 @@ void Client::onDraw(double dt)
 	
     // Swap buffers
 	_window->swapBuffers();
-}
-
-void Client::messageSender()
-{
-    while(1)
-    {
-        //Dequeue from messages.
-        /*
-        if ()
-        {
-            //Do this stuff
-            //_clientConnector.
-        }
-        */
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-}
-
-void Client::stateReceiver()
-{
-    while(1)
-    {
-        // Receive state from server and update on client.
-        // Parse game state
-        json j_state = _clientConnector->receive_game_state(); 
-
-        GameState received_state = GameState::from_json(j_state);
-
-        std::set<int> local_id_players;
-
-        for (auto player : _players)
-        {
-            local_id_players.insert(player.first);
-        }
-
-        // Update positions and rotations of everybody
-        for (GameObj player : received_state.players)
-        {
-            // Add spawned entities.            
-            if (local_id_players.count(player.get_id()) == 0)
-            {
-                _players[player.get_id()] = new Survivor(_shader);
-            }
-            else local_id_players.erase(player.get_id());
-
-            Object* local_player = _players[player.get_id()];
-
-            local_player->setPosition(player.get_position());
-            local_player->setRotation(player.get_rotation());
-        }
-
-        // Remove dead entities.
-        for (int dead_player_id : local_id_players)
-        {
-            Object *dead_player_ptr = _players[dead_player_id];
-            delete dead_player_ptr;
-            _players.erase(dead_player_id);
-        }
-    }
 }

@@ -25,6 +25,11 @@ class Survivor : public Object
 
 		static Mesh* mesh;
 		static Texture* texture;
+
+		float getHealth() { return _health; }
+
+	private:
+		float _health;
 };
 
 #endif// SURVIVOR_H
