@@ -1,5 +1,7 @@
+all: run
+
 run:
-	g++ server.cpp -pthread -o server
+	g++ -g server.cpp -std=c++17 -pthread -o server -fsanitize=address
 	./server
 
 debug:

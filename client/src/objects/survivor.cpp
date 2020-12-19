@@ -45,3 +45,4 @@ void Survivor::move(float dt)
 
 	//std::cout << "CURR POSS " << glm::to_string(_position) << std::endl;
 }
+

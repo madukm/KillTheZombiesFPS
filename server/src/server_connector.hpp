@@ -46,8 +46,8 @@ class ServerConnector
         get_message_buf = new char[GameMessage::buf_size];
         send_state_buf = new char[GameState::buf_size];
 
-        get_message_thread = std::thread(&ServerConnector::get_message, this);
-        send_state_thread = std::thread(&ServerConnector::send_state, this);
+        //get_message_thread = std::thread(&ServerConnector::get_message, this);
+        //send_state_thread = std::thread(&ServerConnector::send_state, this);
 
         printf("Cliend FD: %d\n", socket);
     }
@@ -107,6 +107,42 @@ class ServerConnector
 		// TODO stop this thread when deleting object
         while (_connected)
         {
+            strncpy(send_state_buf, _update_state.to_json().dump().c_str(), GameState::buf_size-1);
+            log->log(std::string("Sending ") + send_state_buf, DEBUG);
+			int write_size = write(_socket, send_state_buf, GameState::buf_size);
+			if(write_size<=0)
+			{
+				// Client disconnected
+				log->log(std::string("Client disconnected: ") + std::to_string(_socket), INFO);
+				_connected = false;
+			}
+        	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+
+    // Update function.
+    void update()
+    {
+		// TODO stop this thread when deleting object
+        while (_connected)
+        {
+            int read_size = read(_socket, get_message_buf, GameMessage::buf_size);
+
+			if(read_size>0)
+			{
+                GameMessage aux = GameMessage::from_json(json::parse(get_message_buf));
+
+				_m_queue_semaphore.down();
+				_m_queue.push(aux);
+				_m_queue_semaphore.up();
+			}
+			else
+			{
+				// Client disconnected
+				log->log(std::string("Client disconnected: ") + std::to_string(_socket), INFO);
+				_connected = false;
+			}
+
             strncpy(send_state_buf, _update_state.to_json().dump().c_str(), GameState::buf_size-1);
             log->log(std::string("Sending ") + send_state_buf, DEBUG);
 			int write_size = write(_socket, send_state_buf, GameState::buf_size);
