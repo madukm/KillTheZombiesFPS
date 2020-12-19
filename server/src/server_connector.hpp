@@ -86,7 +86,7 @@ class ServerConnector
 				if(message_json.empty())
 					continue;
 
-				GameMessage aux = GameMessage::from_json();
+				GameMessage aux = GameMessage::from_json(message_json);
 
 				_m_queue_semaphore.down();
 				_m_queue.push(aux);

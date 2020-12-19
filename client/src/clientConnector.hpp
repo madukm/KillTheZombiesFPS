@@ -82,13 +82,13 @@ class ClientConnector
         memset(send_message_buffer, 0, GameMessage::buf_size);
         strncpy(send_message_buffer, j_message.dump().c_str(), GameMessage::buf_size-1);
 
-        client_connector_logger.log(std::string("Sending: ") + std::string(send_message_buffer), log_type::DEBUG);
+        //client_connector_logger.log(std::string("Sending: ") + std::string(send_message_buffer), log_type::DEBUG);
         //Send over tcp.
         int bytes_written = write(sd, send_message_buffer, GameMessage::buf_size);
         if(bytes_written == -1) {
             printf("Oh dear, something went wrong with write()! %s\n", strerror(errno));
         }
-        client_connector_logger.log(std::string("Bytes written: ") + std::to_string(bytes_written));
+        //client_connector_logger.log(std::string("Bytes written: ") + std::to_string(bytes_written));
     }
 
     json receive_game_state() //ptr to game state maybe
@@ -99,12 +99,12 @@ class ClientConnector
         //Receive updated values from server.
         //In this implementation, server is always right. (i suppose)
         int bytes_read = read(sd, receive_state_buffer, GameState::buf_size);
-        client_connector_logger.log(std::string("Bytes from server: ") + std::to_string(bytes_read));
+        //client_connector_logger.log(std::string("Bytes from server: ") + std::to_string(bytes_read));
         if(bytes_read == -1) {
                 printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
         }
 
-        client_connector_logger.log(std::string("Received from server: ") + std::string(receive_state_buffer), log_type::INFO);
+        //client_connector_logger.log(std::string("Received from server: ") + std::string(receive_state_buffer), log_type::INFO);
 
 		json result;
 		try
@@ -116,7 +116,7 @@ class ClientConnector
 		{
 			// Bad json format
 			//std::cout << e. << std::endl;
-			client_connector_logger.log(std::string("Bad JSON!"), WARN);
+			//client_connector_logger.log(std::string("Bad JSON!"), WARN);
 		}
 
         return result;

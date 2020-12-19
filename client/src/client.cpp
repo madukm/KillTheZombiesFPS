@@ -27,7 +27,6 @@ Client::Client()
 
 	_ui = new UI(_shader);
     //_ui->setPlayers(_players);
-    _ui->setZombies(_zombies);
 
     // Connection bootstraping
     //TODO add config file.
@@ -160,6 +159,8 @@ void Client::createWorld()
     //_players[_this_player_id] = new Survivor(_shader, {0,0,0}, {0,0,0}, {0.5,0.5,0.5});
 	_camera->setPlayer((Survivor*)_players[_this_player_id]);
 	_zombies.push_back(new Zombie(_shader, {0,1,2}, {0,0,0}, {0.5,0.5,0.5}));
+
+    _ui->setZombies(_zombies);
 }
 
 void Client::messageSender() //This is a thread
@@ -273,12 +274,89 @@ void Client::onMouse(double xpos, double ypos)
 	_camera->updateOnMouse(xpos/_window->getWidth(), ypos/_window->getHeight());
 }
 
+bool intersectTriangle(
+    glm::vec3 rDir, glm::vec3 rOrigin, glm::vec3 A, glm::vec3 B, glm::vec3 C
+	) 
+{
+	glm::vec3 E1 = B-A;
+	glm::vec3 E2 = C-A;
+	glm::vec3 N = glm::cross(E1,E2);
+	float det = -glm::dot(rDir, N);
+	float invdet = 1.0/det;
+	glm::vec3 AO  = rOrigin - A;
+	glm::vec3 DAO = glm::cross(AO, rDir);
+	float u =  glm::dot(E2,DAO) * invdet;
+	float v = -glm::dot(E1,DAO) * invdet;
+	float t =  glm::dot(AO,N)  * invdet;
+	return (det >= 1e-6 && t >= 0.0 && u >= 0.0 && v >= 0.0 && (u+v) <= 1.0);
+}
+
 void Client::onMouseClick(int button, int action, int mods)
 {
-	//if(action == GLFW_PRESS)
-	//	_log->log("Mouse button pressed", DEBUG);
-	//else
-	//	_log->log("Mouse button released", DEBUG);
+	// Mouse click -> shot
+	if(action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1)
+	{
+		glm::vec3 rayDir = _camera->getFront();
+		glm::vec3 rayOrig = _camera->getPosition();
+		float distance = 999999;
+
+		std::vector<glm::vec3> vertices = {
+			glm::vec3(1.000000, 2.000000, -1.000000),
+			glm::vec3(1.000000, -2.000000, -1.000000),
+			glm::vec3(1.000000, 2.000000, 1.000000),
+			glm::vec3(1.000000, -2.000000, 1.000000),
+			glm::vec3(-1.000000, 2.000000, -1.000000),
+			glm::vec3(-1.000000, -2.000000, -1.000000),
+			glm::vec3(-1.000000, 2.000000, 1.000000),
+			glm::vec3(-1.000000, -2.000000, 1.000000)};
+
+		struct Indice
+		{
+			int v0;
+			int v1;
+			int v2;
+		};
+
+		std::vector<Indice> indices = {
+			{5, 3, 1},
+			{3, 8, 4},
+			{7, 6, 8},
+			{2, 8, 6},
+			{1, 4, 2},
+			{5, 2, 6},
+			{5, 7, 3},
+			{3, 7, 8},
+			{7, 5, 6},
+			{2, 4, 8},
+			{1, 3, 4},
+			{5, 1, 2}
+		};
+
+		for(auto& zombie : _zombies)
+		{
+			glm::mat4 model = zombie->getModelMat();
+
+			bool intersection = false;
+
+			// Check intersection with box triangles
+			for(auto face : indices)
+			{
+				glm::vec3 v0 = glm::vec3(model*glm::vec4(vertices[face.v0-1], 1));
+				glm::vec3 v1 = glm::vec3(model*glm::vec4(vertices[face.v1-1], 1));
+				glm::vec3 v2 = glm::vec3(model*glm::vec4(vertices[face.v2-1], 1));
+
+				if(intersectTriangle(rayDir, rayOrig, v0, v1, v2))
+				{
+					intersection = true;
+					break;
+				}
+			}
+
+			if(intersection)// TODO send message to server
+				zombie->setHealth(std::max(zombie->getHealth()-0.1f, 0.0f));
+		}
+
+	}
 }
 
 void Client::onDraw(double dt)

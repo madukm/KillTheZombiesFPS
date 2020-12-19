@@ -23,6 +23,7 @@ class Zombie : public Object
 		static Texture* texture;
 
 		float getHealth() { return _health; }
+		void setHealth(float health) { _health=health; }
 
 	private:
 		float _health;

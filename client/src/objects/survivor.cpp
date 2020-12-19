@@ -43,5 +43,5 @@ void Survivor::move(float dt)
 	_position += planeFront* (speed*_movingForward) * dt;
 	_position += glm::normalize(glm::cross(_front, glm::vec3(0,1,0)))* (speed*_movingLeft) * dt;
 
-	std::cout << "CURR POSS " << glm::to_string(_position) << std::endl;
+	//std::cout << "CURR POSS " << glm::to_string(_position) << std::endl;
 }

@@ -197,7 +197,7 @@ bool Camera::detectCollision(glm::vec3 position)
 		// Block collision box info
 		glm::mat4 model = block->getModelMat();
 		CollisionBox blockBox = {
-			block->getScale(),
+			block->getScale()/2.0f,
 			glm::vec3(model[0][0], model[1][0], model[2][0]),
 			glm::vec3(model[0][1], model[1][1], model[2][1]),
 			glm::vec3(model[0][2], model[1][2], model[2][2])
@@ -206,11 +206,14 @@ bool Camera::detectCollision(glm::vec3 position)
 		// Player collision box info
 		glm::mat4 modelCamera = _player->getModelMat();
 		CollisionBox playerBox = {
-			block->getScale(),
+			glm::vec3(1,1,1)/2.0f,
 			glm::vec3(modelCamera[0][0], modelCamera[1][0], modelCamera[2][0]),
 			glm::vec3(modelCamera[0][1], modelCamera[1][1], modelCamera[2][1]),
 			glm::vec3(modelCamera[0][2], modelCamera[1][2], modelCamera[2][2])
 		};
+		std::cout << "---------------------- BLOCK ---------------------- " << std::endl;
+		std::cout << glm::to_string(blockBox.size) << std::endl;
+		std::cout << glm::to_string(position) << std::endl;
 
 		// Vector between the two centres
 		glm::vec3 toCenter = position - _position;
@@ -229,23 +232,21 @@ bool Camera::detectCollision(glm::vec3 position)
 		
 		// Check cross product axes
 		bool crossAxes = overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis0, playerBox.axis0), toCenter) &&
-						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis0, playerBox.axis1), toCenter) &&
-						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis0, playerBox.axis2), toCenter) &&
+				overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis0, playerBox.axis1), toCenter) &&
+				overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis0, playerBox.axis2), toCenter) &&
 
-						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis1, playerBox.axis0), toCenter) &&
-						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis1, playerBox.axis1), toCenter) &&
-						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis1, playerBox.axis2), toCenter) &&
-						
-						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis2, playerBox.axis0), toCenter) &&
-						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis2, playerBox.axis1), toCenter) &&
-						overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis2, playerBox.axis2), toCenter);
+				overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis1, playerBox.axis0), toCenter) &&
+				overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis1, playerBox.axis1), toCenter) &&
+				overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis1, playerBox.axis2), toCenter) &&
+				
+				overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis2, playerBox.axis0), toCenter) &&
+				overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis2, playerBox.axis1), toCenter) &&
+				overlapOnAxis(blockBox, playerBox, glm::cross(blockBox.axis2, playerBox.axis2), toCenter);
 
 		
 		// If overlap in all axes, the boxes are colliding
 		if(boxAxes && playerAxes && crossAxes)
 			return true;
-
-		break;
 	}
 
 	return false;
@@ -266,9 +267,9 @@ bool overlapOnAxis(CollisionBox one, CollisionBox two, glm::vec3 axis, glm::vec3
     float twoProject = transformToAxis(two, axis);
 
     // Project this onto the axis
-    float distance = glm::dot(toCenter, axis);
+    float distance = abs(glm::dot(toCenter, axis));
 
-	//std::cout << "----------" << std::endl;
+	std::cout << "----------" << std::endl;
 	//std::cout << "One" << std::endl;
 	//std::cout << "0: " << glm::to_string(one.axis0) << std::endl;
 	//std::cout << "1: " << glm::to_string(one.axis1) << std::endl;
@@ -279,14 +280,15 @@ bool overlapOnAxis(CollisionBox one, CollisionBox two, glm::vec3 axis, glm::vec3
 	//std::cout << "2: " << glm::to_string(two.axis2) << std::endl;
 	//std::cout << "Axis " << glm::to_string(axis) << std::endl;
 
-	//std::cout << "One Proj " << oneProject << std::endl;
-	//std::cout << "Two Proj " << twoProject << std::endl;
-	//std::cout << "Distance " << distance << std::endl;
+	std::cout << "One Proj " << oneProject << std::endl;
+	std::cout << "Two Proj " << twoProject << std::endl;
+	std::cout << "ToCenter " << glm::to_string(toCenter) << std::endl;
+	std::cout << "Distance " << distance << std::endl;
 	//std::cout << distance << " <= " << oneProject << " + " << twoProject << std::endl;
-	//if((distance <= oneProject + twoProject) == false)
-	//{
-	//	std::cout << "!!!!!!!" << std::endl;
-	//}
+	if((distance <= oneProject + twoProject) == false)
+	{
+		std::cout << "Not colliding" << std::endl;
+	}
 
     // Check for overlap
     return (distance <= oneProject + twoProject);
