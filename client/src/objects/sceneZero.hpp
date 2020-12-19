@@ -10,6 +10,9 @@ class SceneZero
 		~SceneZero();
 
 		void draw();
+		
+		std::vector<Block*> getBlocks() const { return _blocks; }
+
 	private:
 		std::vector<Block*> _blocks;
 };

@@ -14,6 +14,26 @@ Shader::~Shader()
 	}
 }
 
+void Shader::setColor(glm::vec3 color)
+{
+	glUniform3f(_uniformColor, color.x, color.y, color.z);
+}
+
+void Shader::useOnlyColor()
+{
+	glUniform1i(_uniformOnlyColor, 1);
+}
+
+void Shader::useOnlyTexture()
+{
+	glUniform1i(_uniformOnlyColor, 0);
+}
+
+void Shader::setProcessLight(bool process)
+{
+	glUniform1i(_uniformProcessLight, (int)process);
+}
+
 void Shader::createFromFiles(std::string vertexFileName, std::string fragmentFileName)
 {
 	std::string vertexCode = readFile(vertexFileName);
@@ -51,7 +71,7 @@ void Shader::compileShader(std::string vertexCode, std::string fragmentCode)
 
 	if(!_programId)
 	{
-		//Log::error("Shader", "Error creating shader program!");
+		_log->log("Error creating shader program!", WARN);
 		exit(1);
 	}
 
@@ -68,7 +88,7 @@ void Shader::compileShader(std::string vertexCode, std::string fragmentCode)
 	if(!result)
 	{
 		glGetProgramInfoLog(_programId, sizeof(eLog), NULL, eLog);
-		//Log::error("Shader", "Error linking program: '" + std::string(eLog)+ "'");
+		_log->log("Error linking program: '" + std::string(eLog)+ "'", WARN);
 		exit(1);
 	}
 
@@ -78,7 +98,7 @@ void Shader::compileShader(std::string vertexCode, std::string fragmentCode)
 	if(!result)
 	{
 		glGetProgramInfoLog(_programId, sizeof(eLog), NULL, eLog);
-		//Log::error("Shader", "Error validating program: '" + std::string(eLog)+ "'");
+		_log->log("Error validating program: '" + std::string(eLog)+ "'", WARN);
 		exit(1);
 	}
 
@@ -86,6 +106,9 @@ void Shader::compileShader(std::string vertexCode, std::string fragmentCode)
 	_uniformModel = glGetUniformLocation(_programId, "model");
 	_uniformView = glGetUniformLocation(_programId, "view");
 	_uniformProjection = glGetUniformLocation(_programId, "projection");
+	_uniformColor = glGetUniformLocation(_programId, "color");
+	_uniformOnlyColor = glGetUniformLocation(_programId, "onlyColor");
+	_uniformProcessLight = glGetUniformLocation(_programId, "processLight");
 }
 
 void Shader::useShader()

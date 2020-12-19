@@ -1,7 +1,10 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 #include <glm/glm.hpp>
+#include <vector>
 #include "../../../shared/logger.hpp"
+
+class Block;
 
 class Camera
 {
@@ -22,8 +25,12 @@ class Camera
 		glm::vec3 getRotation() const { return glm::vec3(0,_yaw-90,0); }
 		void setPosition(glm::vec3 pos) { _position=pos; }
 		void setFront(glm::vec3 front) { _front=front; }
+		void setSceneBlocks(std::vector<Block*> blocks) { _sceneBlocks = blocks; }
 
 	private:
+		// Check if the position is colliding with any block
+		bool detectCollision(glm::vec3 position);
+
 		glm::vec3 _position;
 		glm::vec3 _up;
 		glm::vec3 _front;
@@ -41,8 +48,12 @@ class Camera
 
 		// Handling freeCamera
 		int _movingForward;
-		//int _movingUp;
 		int _movingLeft;
+
+		// game parameters
+		bool _fly;
+		bool _collisionDetection;
+		std::vector<Block*> _sceneBlocks;
 
 		Logger* _log;
 };

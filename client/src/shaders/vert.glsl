@@ -13,7 +13,7 @@ uniform mat4 projection;
 void main()
 {
 	texCoords = inTexCoords;
-	normal = inNormal;
+	normal = vec3(transpose(inverse(model)) * vec4(inNormal, 1.0));// Apply normal matrix to normal
 
 	gl_Position = projection*view*model*vec4(position, 1.0);
 }

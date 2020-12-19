@@ -15,6 +15,7 @@
 #include "render/camera.hpp"
 #include "render/ui.hpp"
 #include "objects/survivor.hpp"
+#include "objects/zombie.hpp"
 #include "objects/block.hpp"
 #include "objects/sceneZero.hpp"
 
@@ -55,6 +56,7 @@ class Client
 		SceneZero* _sceneZero;
 		
         std::unordered_map<int, Object*> _players;
+        std::vector<Zombie*> _zombies;
 
         // Server connection
         void messageSender();
