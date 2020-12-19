@@ -104,6 +104,7 @@ class GameState
     static GameState from_json(json parsed_state)
     {
         GameState ret;
+        ret.new_player_id = parsed_state["new_player_id"];
 
         //Parse objects.
         for (auto body : parsed_state["players"])
@@ -119,6 +120,9 @@ class GameState
     {
         json ret;
 		ret["players"] = {};
+        ret["new_player_id"] = new_player_id;
+
+        ret["zombies"] = {};
 
         for (GameObj &_player : players)
         {
@@ -128,6 +132,7 @@ class GameState
         return ret;
     }
 
+    int _player_id = -1; //Destination player ID
     std::vector<GameObj> players;
 };
 

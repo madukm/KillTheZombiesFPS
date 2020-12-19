@@ -24,6 +24,8 @@ class ClientConnector
     Logger client_connector_logger;
     char *update_buffer;
 
+    /*this client ID*/
+
     ClientConnector(unsigned short port, std::string address) : 
         client_connector_logger(Logger("clientconnector.hpp"))
     {

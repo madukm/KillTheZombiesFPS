@@ -69,15 +69,15 @@ class ServerLogic
 
             //spawn zombies.
             //altera gamestate
+            
             //notifica os clientes.
-            /*
             for (auto client : active_clients)
             {
                 //notify client
-                //
-                //get_message();
-                // novo gamestate
-            }*/
+                GameState temp_state;
+                temp_state._player_id = client.first;
+                client.second->_update_queue.push();
+            }
         }
     }
 
@@ -92,14 +92,22 @@ class ServerLogic
                                               message_queue_semaphore,
                                               _state);
 
-        active_clients.push_back(temp_new_client);
+        int new_id;
+        do
+         {
+             /* code */
+         } while (active_clients.count(new_id) != 0); 
+        
+        active_clients[new_id] = temp_new_client;
+
+        //simply send the value to the client.
     }
 
     private:
 
     std::unordered_map<int, GameObj> _players;
+    std::unordered_map<int, ServerConnector*> active_clients;
     std::queue<GameMessage> message_queue; //kiwi
-    std::vector<ServerConnector*> active_clients;
     Semaphore message_queue_semaphore;
     GameState _state;
 };

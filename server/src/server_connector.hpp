@@ -73,18 +73,24 @@ class ServerConnector
     {
         while (true)
         {
-            strncpy(send_state_buf, _update_state.to_json().dump().c_str(), GameState::buf_size-1);
-            printf("SEND JSON >>> %s\n", send_state_buf);
-            write(_socket, send_state_buf, GameState::buf_size-1);
+            if (!_update_queue.empty())
+            {
+                strncpy(send_state_buf, _update_queue.front().to_json().dump().c_str(), GameState::buf_size-1);
+                _update_queue.pop();
+                printf("SEND JSON >>> %s\n", send_state_buf);
+                write(_socket, send_state_buf, GameState::buf_size-1);
+            }
         }
     }
 
     private:
 
 	int _socket; //socket descriptor
-    std::queue<GameMessage> &_m_queue;
+
+    std::queue<GameMessage> &_m_queue; //Message queue to server.
     Semaphore &_m_queue_semaphore;
-    GameState &_update_state; //Game reference
+    
+    std::queue<_update_state> _update_queue;
     
     char *get_message_buf;
     char *send_state_buf;

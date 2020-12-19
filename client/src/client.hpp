@@ -8,6 +8,7 @@
 
 #include "clientConnector.hpp"
 #include "../../shared/game_state.hpp" //TODO add in cmake to include <gamestate.hpp>
+#include "../../shared/game_message.hpp"
 #include "../../shared/semaphore.hpp"
 #include "../../shared/logger.hpp"
 #include "render/window.hpp"
@@ -64,5 +65,8 @@ class Client
 
         std::thread sender_thread;
         std::thread receiver_thread;
+
+        std::queue<GameMessage> message_queue;
+        int _this_player_id;
 };
 #endif// CLIENT_H

@@ -35,6 +35,8 @@ Client::Client()
     //TODO add config file.
 	_clientConnector = new ClientConnector(1337, "127.0.0.1");
 
+    //_this_player_id = _clientConnector.get_id();
+
     sender_thread = std::thread(&Client::messageSender, this);
     receiver_thread = std::thread(&Client::stateReceiver, this);
 }
@@ -124,8 +126,9 @@ Client::~Client() //Join threads.
 		delete _sceneZero;
 		_sceneZero = nullptr;
 	}
-}
 
+    //execve("shutdown 0");
+}
 
 void Client::run()
 {
@@ -149,23 +152,29 @@ void Client::createWorld()
 	_sceneZero = new SceneZero(_shader);
 	_camera->setSceneBlocks(_sceneZero->getBlocks());
 
+    //Pass to player map <int, object*>
 	_players[0] = new Survivor(_shader, {0,0,0}, {0,0,0}, {0.5,0.5,0.5});
+    //_players[_this_player_id] = new Survivor(_shader, {0,0,0}, {0,0,0}, {0.5,0.5,0.5});
 	_camera->setPlayer((Survivor*)_players[0]);
 	_zombies.push_back(new Zombie(_shader, {0,1,2}, {0,0,0}, {0.5,0.5,0.5}));
 }
 
-void Client::messageSender()
+void Client::messageSender() //This is a thread
 {
+    GameMessage sent_message;
+
     while(1)
     {
         //Dequeue from messages.
-        /*
-        if ()
+        if (!message_queue.empty())
         {
             //Do this stuff
             //_clientConnector.
         }
-        */
+        else
+        {
+            sent_message._type = MOVE;
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
@@ -179,6 +188,7 @@ void Client::stateReceiver()
         json j_state = _clientConnector->receive_game_state(); 
 
         GameState received_state = GameState::from_json(j_state);
+        _this_player_id = GameState._player_id; //Setting self id.
 
         std::set<int> local_id_players;
 
