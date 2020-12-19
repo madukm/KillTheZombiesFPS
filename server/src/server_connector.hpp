@@ -5,6 +5,7 @@
 #include <thread>
 #include <chrono>
 #include <queue>
+#include <cerrno>
 
 // Networking stuff.
 #include <arpa/inet.h> 
@@ -48,6 +49,7 @@ class ServerConnector
         get_message_thread = std::thread(&ServerConnector::get_message, this);
         send_state_thread = std::thread(&ServerConnector::send_state, this);
 
+        printf("Cliend FD: %d\n", socket);
     }
 	
 	~ServerConnector()
@@ -62,7 +64,6 @@ class ServerConnector
 		delete log;
 
 		close(_socket);
-
 	}
 
     // Get and enqueue message from client.
@@ -71,6 +72,11 @@ class ServerConnector
         while (true)
         {
             int read_size = read(_socket, get_message_buf, GameMessage::buf_size);
+            if(read_size == -1) {
+                printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
+            }
+            //printf("RECEIVED MESSAGE %s\n", get_message_buf);
+
 			if(read_size>0)
 			{
 				GameMessage aux = GameMessage::from_json(json::parse(get_message_buf));
@@ -85,6 +91,7 @@ class ServerConnector
 				//log->log(std::string("Client disconnected: ") + std::to_string(_socket), INFO);
 				_connected = false;
 			}
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
 
@@ -95,9 +102,12 @@ class ServerConnector
         while (true)
         {
             strncpy(send_state_buf, _update_state.to_json().dump().c_str(), GameState::buf_size-1);
-            printf("SEND JSON >>> %s\n", send_state_buf);
-            write(_socket, send_state_buf, GameState::buf_size-1);
-        	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            log->log(std::string("Sending ") + send_state_buf, DEBUG);
+            int write_size = write(_socket, send_state_buf, GameState::buf_size);
+            if(write_size == -1) {
+                printf("Oh dear, something went wrong with write()! %s\n", strerror(errno));
+            }
+        	std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
     }
 

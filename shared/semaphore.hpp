@@ -71,7 +71,7 @@ class Semaphore
     {
         std::unique_lock<std::mutex> lock(mtx);
 
-        printf("UP!\n");
+        //printf("UP!\n");
 
         count++;
 
@@ -83,7 +83,7 @@ class Semaphore
     {
         std::unique_lock<std::mutex> lock(mtx);
 
-        printf("DOWN!\n");
+        //printf("DOWN!\n");
 
         while(count == 0)
         {

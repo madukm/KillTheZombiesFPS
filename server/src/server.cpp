@@ -33,11 +33,12 @@ int main()
     bind(incoming_descriptor, (struct sockaddr*) &incoming_addr, sizeof(incoming_addr));
 
     if (listen(incoming_descriptor, 4) != 0)
+    {
         printf("Error in listen."); //TODO add in logger.
+    }
 
-
-	std::thread listen_connections_t(listen_connections);
-	std::thread remove_disconnected_clients_t(remove_disconnected_clients);
+    std::thread listen_connections_t(listen_connections);
+    std::thread remove_disconnected_clients_t(remove_disconnected_clients);
 
     while(1) //Listen for connections.
     {
@@ -59,10 +60,9 @@ void listen_connections()
 {
 	while(1)
 	{
-
         addr_size = sizeof(incoming_addr);
         temp_descriptor = accept(incoming_descriptor, (struct sockaddr*) &incoming_addr, &addr_size);
-        printf("Accepted connection!\n");
+        printf("Accepted connection at descriptor %d\n", temp_descriptor);
 
         _logic.add_client(temp_descriptor);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

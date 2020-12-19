@@ -35,71 +35,85 @@ class ServerLogic
     //different thread
     void run()
     {
-        //GameMessage received_message;
-        //bool new_message;
+        GameMessage received_message;
+        bool new_message;
+        /*
+        while(1)
+        {
+            message_queue_semaphore.down();
+            if (!message_queue.empty())
+            {
+                received_message = message_queue.front();
+                message_queue.pop();
+                new_message = true;
+            } else new_message = false;
+            message_queue_semaphore.up();
 
-        //while(1)
-        //{
-        //    message_queue_semaphore.down();
-        //    if (!message_queue.empty())
-        //    {
-        //        received_message = message_queue.front();
-        //        message_queue.pop();
-        //        new_message = true;
-        //    } else new_message = false;
-        //    message_queue_semaphore.up();
+            if (new_message)
+            {
+                //tratar msg
+                switch (received_message._type)
+                {
+                    case MOVE:
+                    {
+                        GameObj &temp_obj = 
+                            _players[received_message._game_obj.get_id()];
+                        temp_obj.set_position(received_message._game_obj.get_position());
+                        temp_obj.set_rotation(received_message._game_obj.get_rotation());
+                        break;
+                    }
 
-        //    if (new_message)
-        //    {
-        //        //tratar msg
-        //        switch (received_message._type)
-        //        {
-        //            case MOVE:
-        //            {
-        //                GameObj &temp_obj = 
-        //                    _players[received_message._game_obj.get_id()];
-        //                temp_obj.set_position(received_message._game_obj.get_position());
-        //                temp_obj.set_rotation(received_message._game_obj.get_rotation());
-        //                break;
-        //            }
+                    case HIT:
+                        //Encontrou no state
+                        //MAtou alguem.
+                        //killed_ids.push_back(iddequemmooreu);
 
-        //            case HIT:
-        //                //Encontrou no state
-        //                //MAtou alguem.
-        //                //killed_ids.push_back(iddequemmooreu);
+                    default:
+                        break;
+                }
+            }
 
-        //            default:
-        //                break;
-        //        }
-        //    }
-
-        //    //spawn zombies.
-        //    //altera gamestate
-        //    
-        //    //notifica os clientes.
-        //    for (auto client : active_clients)
-        //    {
-        //        //notify client
-        //        GameState temp_state;
-        //        //temp_state._player_id = client.first;
-        //        //client.second->_update_queue.push();
-        //    }
-        //}
+            //spawn zombies.
+            //altera gamestate
+            
+            //notifica os clientes.
+            for (auto client : active_clients)
+            {
+                //notify client
+                GameState temp_state;
+                //temp_state._player_id = client.first;
+                //client.second->_update_queue.push();
+            }
+        }
+        */
     }
 
     void add_client(int new_client_descriptor)
     {
         ServerConnector *temp_new_client;
+        char buf[40];
+        json incoming_j_obj, outgoing_j_obj;
 
-        //Reference to gamestate, 
-        //message_queue reference, semaphore
+        // Wait for client name, and send client ID.
+        read(new_client_descriptor, buf, 40); //read(_socket, get_message_buf, GameMessage::buf_size);
+        incoming_j_obj = json::parse(buf);
+        _log->log(std::string("New player enters the ring: ")
+            + std::string(incoming_j_obj["name"]));
+
+        outgoing_j_obj["your_id"] = new_client_descriptor;
+        strncpy(buf, outgoing_j_obj.dump().c_str(), 40);
+        write(new_client_descriptor, buf, 40);
+
+        GameObj added_player = GameObj (new_client_descriptor, 
+                                        incoming_j_obj["name"]);
+        _state.players.insert(std::make_pair(new_client_descriptor, added_player));
+
         temp_new_client = new ServerConnector(new_client_descriptor,
                                               message_queue,
                                               message_queue_semaphore,
                                               _state);
         
         active_clients[new_client_descriptor] = temp_new_client;
-		_state.players.push_back(GameObj(new_client_descriptor));
     }
 
 	void delete_disconnected()
@@ -111,6 +125,12 @@ class ServerLogic
 				delete client.second;
 				active_clients.erase(client.first);
 
+                if (_state.players.count(client.first) != 0)
+                {
+                    _state.players.erase(client.first);
+                }
+
+                /*
 				for(int i=0; i<(int)_state.players.size(); i++)
 				{
 					if(_state.players[i].get_id() == client.first)
@@ -118,6 +138,7 @@ class ServerLogic
 						_state.players.erase(_state.players.begin()+i);
 					}
 				}
+                */
 			}
 		}
 	}

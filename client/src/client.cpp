@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <set>
+#include <functional>
 
 Client::Client()
 {
@@ -24,21 +25,20 @@ Client::Client()
 	_shader->createFromFiles("../shaders/vert.glsl", "../shaders/frag.glsl");
 
 	_ui = new UI(_shader);
-
-	loadAssets();
-	createWorld();
-	_ui->setZombies(_zombies);
-	//_ui->setPlayers(_players);
+    //_ui->setPlayers(_players);
+    _ui->setZombies(_zombies);
 
     // Connection bootstraping
-
     //TODO add config file.
 	_clientConnector = new ClientConnector(1338, "127.0.0.1");
+    _this_player_id = _clientConnector->send_init_sequence("maoe");
+    _player = new GameObj();
 
-    //_this_player_id = _clientConnector.get_id();
+    printf("GOT SOCKET: %d\n", _clientConnector->get_socket());
 
-    sender_thread = std::thread(&Client::messageSender, this);
-    receiver_thread = std::thread(&Client::stateReceiver, this);
+    //Setting local player game obj
+    _player->set_name("maoe");
+    _player->set_id(_this_player_id);
 }
 
 Client::~Client() //Join threads.
@@ -126,12 +126,15 @@ Client::~Client() //Join threads.
 		delete _sceneZero;
 		_sceneZero = nullptr;
 	}
-
-    //execve("shutdown 0");
+    /*
+        should delete threads.
+    */
 }
 
 void Client::run()
 {
+    loadAssets();
+    createWorld();
 	_window->loop();
 }
 
@@ -148,35 +151,37 @@ void Client::loadAssets()
 void Client::createWorld()
 {
     //Notify server that a new player is in.
-
 	_sceneZero = new SceneZero(_shader);
 	_camera->setSceneBlocks(_sceneZero->getBlocks());
 
     //Pass to player map <int, object*>
-	_players[0] = new Survivor(_shader, {0,0,0}, {0,0,0}, {0.5,0.5,0.5});
+	_players[_this_player_id] = new Survivor(_shader, {0,0,0}, {0,0,0}, {0.5,0.5,0.5});
     //_players[_this_player_id] = new Survivor(_shader, {0,0,0}, {0,0,0}, {0.5,0.5,0.5});
-	_camera->setPlayer((Survivor*)_players[0]);
+	_camera->setPlayer((Survivor*)_players[_this_player_id]);
 	_zombies.push_back(new Zombie(_shader, {0,1,2}, {0,0,0}, {0.5,0.5,0.5}));
 }
 
 void Client::messageSender() //This is a thread
 {
-    //GameMessage sent_message;
+    GameMessage sent_message;
 
-    //while(1)
-    //{
-    //    //Dequeue from messages.
-    //    if (!message_queue.empty())
-    //    {
-    //        //Do this stuff
-    //        //_clientConnector.
-    //    }
-    //    else
-    //    {
-    //        sent_message._type = MOVE;
-    //    }
-    //    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    //}
+    while(1)
+    {
+        //Dequeue from messages.
+        if (!message_queue.empty())
+        {
+            //Do this stuff
+            //_clientConnector.
+        }
+        else
+        {
+            sent_message._type = MOVE;
+            sent_message._game_obj = *_player;
+        }
+
+        _clientConnector->send_game_message(sent_message.to_json());
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
 }
 
 void Client::stateReceiver()
@@ -198,7 +203,7 @@ void Client::stateReceiver()
         }
 
         // Update positions and rotations of everybody
-        for (GameObj player : received_state.players)
+        for (auto [key, player] : received_state.players)
         {
             // Add spawned entities.            
             if (local_id_players.count(player.get_id()) == 0)
@@ -213,6 +218,8 @@ void Client::stateReceiver()
             local_player->setRotation(player.get_rotation());
         }
 
+        //Check here if i was not killed.
+
         // Remove dead entities.
         for (int dead_player_id : local_id_players)
         {
@@ -220,6 +227,7 @@ void Client::stateReceiver()
             delete dead_player_ptr;
             _players.erase(dead_player_id);
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 

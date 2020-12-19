@@ -20,10 +20,20 @@ class GameObj
 {
     public:
 
-    GameObj(int objectId, std::string name_ = "usuario x", glm::vec3 position = {0,1,0}, glm::vec3 rotation = {0,0,0}):
-		name(name_), health(1.0f), _position(position), _rotation(rotation)
+    GameObj(int objectId = -1, std::string name_ = "usuario x", glm::vec3 position = {0,1,0}, glm::vec3 rotation = {0,0,0}):
+		id(objectId), name(name_), health(1.0f), _position(position), _rotation(rotation)
     {
 	}
+
+    GameObj(const GameObj &copied)
+    {
+        name = copied.name;
+        health = copied.health;
+        power = copied.power;
+        id = copied.id;
+        _position = copied._position;
+        _rotation = copied._rotation;
+    }
 
     static GameObj from_json(json parsed_obj)
     {
@@ -58,8 +68,10 @@ class GameObj
 		health -= hit_player.health;
 	}
 	
-    int get_id() { return id; }
+    std::string get_name() { return name; }
+    void set_name(std::string name_) { name = name_; }
 
+    int get_id() { return id; }
     void set_id(int _id){ id = _id; }
 
     glm::vec3 get_position() { return _position; }
@@ -69,11 +81,11 @@ class GameObj
     void set_rotation(glm::vec3 rotation) { _rotation = rotation; }
 
 private:
+    int id;
 	std::string name;
     float health;
     int power;
-    int id;
-	
+    
 	glm::vec3 _position;
 	glm::vec3 _rotation;
 	
@@ -97,15 +109,15 @@ class GameState
     static GameState from_json(json parsed_state)
     {
         GameState ret;
-        //ret.new_player_id = parsed_state["new_player_id"];
 
-        //Parse objects.
 		if(parsed_state["players"] != nullptr)
 		{
+            // Players is serialized as a vector,
+            // but in fact it's an unordered map.
 			for (auto body : parsed_state["players"])
 			{
 				GameObj _obj = GameObj::from_json(body);
-				ret.players.push_back(_obj);
+				ret.players.insert(std::make_pair(_obj.get_id(), _obj));
 			}
 		}
 
@@ -120,16 +132,15 @@ class GameState
 
         ret["zombies"] = {};
 
-        for (GameObj &_player : players)
+        for (auto _player : players)
         {
-		    ret["players"].push_back(_player.to_json());
+		    ret["players"].push_back(_player.second.to_json());
         }
 
         return ret;
     }
 
-    //int _player_id = -1; //Destination player ID
-    std::vector<GameObj> players;
+    std::unordered_map<int, GameObj> players;
 };
 
 #endif

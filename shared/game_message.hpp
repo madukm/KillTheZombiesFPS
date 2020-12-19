@@ -21,6 +21,9 @@ class GameMessage
 
     static const int buf_size = 1000;
 
+	GameMessage()
+	{}
+	
 	GameMessage(GameObj game_obj):
 		_game_obj(game_obj)
 	{
@@ -28,16 +31,16 @@ class GameMessage
 	
 	static GameMessage from_json(json parsed_obj)
 	{
-		GameObj gameObj = GameObj::from_json(parsed_obj);
+		GameObj gameObj = GameObj::from_json(parsed_obj["game_obj"]);
 
 		GameMessage ret(gameObj);
 
 		if(parsed_obj["type"] == HIT){
 			ret._type = HIT;
+			ret._hitPlayer = parsed_obj["hitPlayer"];
 		}
 		else if(parsed_obj["type"] == MOVE){
 			ret._type = MOVE;
-			ret._hitPlayer = parsed_obj["hitPlayer"];
 		}
 
 		return ret;
@@ -47,9 +50,12 @@ class GameMessage
 	{
 		json ret;
 		ret["type"] = _type;
-
+		
+		ret["game_obj"] = _game_obj.to_json();
+		
 		if(_type == MOVE){
-			ret["game_obj"] = _game_obj.to_json();			
+			//ret["game_obj"] = _game_obj.to_json();
+			;			
 		}
 		if(_type == HIT){
 			ret["hitPlayer"] = _hitPlayer;

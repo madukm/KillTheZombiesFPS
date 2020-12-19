@@ -29,13 +29,13 @@ class Client
 
 		void run();
 
-	private:
-		void loadAssets();
-		void createWorld();
-
         // Server connection
         void messageSender();
         void stateReceiver();
+
+	private:
+		void loadAssets();
+		void createWorld();
 
 		//---------- Callbacks ----------//
 		void onKey(int key, int scancode, int action, int mods);
@@ -63,9 +63,6 @@ class Client
 		
         std::unordered_map<int, Object*> _players;
         std::vector<Zombie*> _zombies;
-
-        std::thread sender_thread;
-        std::thread receiver_thread;
 
         std::queue<GameMessage> message_queue;
         int _this_player_id;
