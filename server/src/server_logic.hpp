@@ -139,6 +139,7 @@ class ServerLogic
             } else new_message = false;
             message_queue_semaphore.up();
 
+            state_semaphore.down();
             if (new_message)
             {
                 //tratar msg
@@ -179,7 +180,7 @@ class ServerLogic
 
             //If server should zombies position (difficulty).
             curr_time = Clock::now();
-            if (milliseconds(10) <
+            if (milliseconds(5) <
                 std::chrono::duration_cast<milliseconds>(curr_time - prev_time))
             {
                 prev_time = curr_time;
@@ -258,6 +259,7 @@ class ServerLogic
     				}
                 }
             }
+            state_semaphore.up();
 		}
     }
 
@@ -284,6 +286,7 @@ class ServerLogic
         temp_new_client = new ServerConnector(new_client_descriptor,
                                               message_queue,
                                               message_queue_semaphore,
+                                              state_semaphore,
                                               _state);
         
         active_clients[new_client_descriptor] = temp_new_client;
@@ -291,19 +294,20 @@ class ServerLogic
 
 	void delete_disconnected()
 	{
-		for(auto& client : active_clients)
+		for(auto& [id, client] : active_clients)
 		{
-			if(client.second->get_connected() == false)
+			if(client->get_connected() == false)
 			{
-				delete client.second;
-				client.second = nullptr;
+				delete client;
 
-                if(_state.players.count(client.first) != 0)
+                state_semaphore.down();
+                if(_state.players.count(id) != 0)
                 {
-                    _state.players.erase(client.first);
+                    _state.players.erase(id);
                 }
+                state_semaphore.up();
 
-				active_clients.erase(client.first);
+				active_clients.erase(id);
 				return;
 			}
 		}
@@ -315,6 +319,7 @@ class ServerLogic
     std::unordered_map<int, ServerConnector*> active_clients;
     std::queue<GameMessage> message_queue; //kiwi
     Semaphore message_queue_semaphore;
+    Semaphore state_semaphore;
     const int _max_zombie_n;
     int curr_zombie_n;
     GameState _state;
