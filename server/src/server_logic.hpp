@@ -1,14 +1,79 @@
+#define GLM_SWIZZLE
+#define GLM_ENABLE_EXPERIMENTAL
 #include "../../shared/game_state.hpp"
 #include "../../shared/game_message.hpp"
 #include "server_connector.hpp"
 #include "../../shared/semaphore.hpp"
 #include "../../shared/logger.hpp"
-
+#include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <queue>
+
 
 /* Server logic:
  *
  * */
+
+class PotentialField{
+	public:
+
+	PotentialField(){}
+	
+	PotentialField(glm::vec2 initial, std::vector<glm::vec2> targets) :
+		_initial(initial), _targets(targets)
+	{
+	}
+
+	~PotentialField(){}
+
+	glm::vec2 newDirection()
+
+	{
+		int repulsiveForce = 10;
+		int attractiveForce = 50;
+	
+		//Repulsive (Obstacles)
+		std::vector<glm::vec2> obstacleVectors;
+		for(int i=0; i<int(_obstacles.size()); i++)
+		{
+			glm::vec2 vec;
+			vec = _obstacles[i]-_initial;
+			glm::normalize(vec);
+			
+			vec = vec * -float(repulsiveForce) / glm::length (_obstacles[i]-_initial);
+			obstacleVectors.push_back(vec);
+		}
+		
+		glm::vec2 resultantRepulsive = {0,0};
+		for(auto &vec : obstacleVectors){
+			resultantRepulsive += vec;
+		}
+		
+		//Attractive (Targets)
+		std::cout << glm::to_string(_targets[0]) << std::endl;
+		glm::vec2 temp = (_targets[0]-_initial); 
+		float minDist = glm::length(temp);
+		int target = 0;
+		for(int i=1; i<int(_targets.size()); i++)
+		{
+			float dist = glm::length(_targets[i]-_initial);
+			if(dist < minDist){
+			   	minDist = dist;
+				target = i;
+			}
+		}
+		glm::vec2 targetVector = _targets[target] - _initial;
+		glm::vec2 resultantAttractive = targetVector * float(attractiveForce);
+
+		glm::vec2 resultant2 = resultantAttractive + resultantRepulsive;
+		glm::vec3 resultant = {resultant2.x, 0, resultant2.y};
+		return glm::normalize(resultant);
+	}
+	private:
+		glm::vec2 _initial;
+		std::vector<glm::vec2> _obstacles = {{0,50}, {0,-50}, {50,0}, {-50,0}, {-30,40}, {30,40}, {-30,-40}, {30,-40}, {0,0}, {-20,25}, {20,25}, {-20,25},{20,-25}};
+		std::vector<glm::vec2> _targets;	
+};
 
 class ServerLogic
 {
@@ -80,7 +145,10 @@ class ServerLogic
                         GameObj &dead_player =
                             _state.players[received_message._hitPlayer];
                         dead_player.decrease_health(_state.players[received_message._game_obj.get_id()]);
-                        //TODO remove if dead...
+                        if(dead_player.get_health()<=0)
+						{
+							//TODO remove if dead...
+						}
                     }
 
                     default:
@@ -103,18 +171,34 @@ class ServerLogic
                 _state.players.insert(std::make_pair(zomb_id, new_zombie));
             }
 
+			std::vector<glm::vec2> playersPos;
+			for (auto &[id, zombie] : _state.players)
+            {
+		   		if (!zombie.check_zombie()){
+					glm::vec2 pos = {zombie.get_position().x, zombie.get_position().z};
+					playersPos.push_back(pos);
+				}
+			}
             // Zombies wandering.
             for (auto &[id, zombie] : _state.players)
             {
+		    
                 if (zombie.check_zombie())
                 {
                     //Wander
-                    zombie.move_offset(glm::vec3(rand()%10/10,
-                                                 rand()%10/10,
-                                                 rand()%10/10));
-                }
+					if(playersPos.size() > 0){
+						glm::vec2 zombiePos = {zombie.get_position().x, zombie.get_position().z};
+						_potentialField = new PotentialField(zombiePos, playersPos);
+						glm::vec3 vecDir = {_potentialField->newDirection().x, 0, _potentialField->newDirection().y};
+						zombie.set_front(vecDir);
+						zombie.set_moving_forward(1);
+                	}
+					else{
+						zombie.set_moving_forward(0);
+					}
+				}
             }
-        }
+		}
     }
 
     void add_client(int new_client_descriptor)
@@ -166,7 +250,8 @@ class ServerLogic
 	}
 
     private:
-
+	
+	PotentialField *_potentialField; 
     std::unordered_map<int, ServerConnector*> active_clients;
     std::queue<GameMessage> message_queue; //kiwi
     Semaphore message_queue_semaphore;
