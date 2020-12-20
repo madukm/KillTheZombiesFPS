@@ -159,9 +159,7 @@ void Client::createWorld()
 	_players[_this_player_id] = new Survivor(_shader, {0,0,0}, {0,0,0}, {0.5,0.5,0.5});
     //_players[_this_player_id] = new Survivor(_shader, {0,0,0}, {0,0,0}, {0.5,0.5,0.5});
 	_camera->setPlayer((Survivor*)_players[_this_player_id]);
-	_zombies.push_back(new Zombie(_shader, {0,1,2}, {0,0,0}, {0.5,0.5,0.5}));
-
-    _ui->setZombies(_zombies);
+	//_zombies.push_back(new Zombie(_shader, {0,1,2}, {0,0,0}, {0.5,0.5,0.5}));
 }
 
 void Client::messageSender() //This is a thread
@@ -177,6 +175,8 @@ void Client::messageSender() //This is a thread
         {
             //Do this stuff
             //_clientConnector.
+			sent_message = message_queue.front();
+			message_queue.pop();
         }
         else
         {
@@ -200,31 +200,53 @@ void Client::messageSender() //This is a thread
             local_id_players.insert(player.first);
         }
 
+		// Clear zombies
+		for(auto& zombie : _zombies)
+		{
+			delete zombie;
+		}
+		_zombies.clear();
         // Update positions and rotations of everybody
         for (auto [key, player] : received_state.players)
         {
             // Add spawned entities.            
-            if (local_id_players.count(player.get_id()) == 0)
-            {
-                _players[player.get_id()] = new Survivor(_shader);
-            }
-            else local_id_players.erase(player.get_id());
+			if(!player.check_zombie())
+			{
+				if (local_id_players.count(player.get_id()) == 0)
+				{
+					_players[player.get_id()] = new Survivor(_shader);
+				}
+				else local_id_players.erase(player.get_id());
 
-            Survivor* local_player = (Survivor*)_players[player.get_id()];
+				Survivor* local_player = (Survivor*)_players[player.get_id()];
 
-            local_player->setPosition(player.get_position());
-            local_player->setRotation(player.get_rotation());
-            local_player->setScale(player.get_scale());
-            local_player->setId(player.get_id());
-            local_player->setHealth(player.get_health());
-            local_player->setPower(player.get_power());
-            local_player->setName(player.get_name());
+				local_player->setPosition(player.get_position());
+				local_player->setRotation(player.get_rotation());
+				local_player->setScale(player.get_scale());
+				local_player->setId(player.get_id());
+				local_player->setHealth(player.get_health());
+				local_player->setPower(player.get_power());
+				local_player->setName(player.get_name());
 
-            local_player->setFly(player.get_fly());
-            local_player->setFront(player.get_front());
-            local_player->setMovingForward(player.get_moving_forward());
-            local_player->setMovingLeft(player.get_moving_left());
+				local_player->setFly(player.get_fly());
+				local_player->setFront(player.get_front());
+				local_player->setMovingForward(player.get_moving_forward());
+				local_player->setMovingLeft(player.get_moving_left());
+			}
+			else
+			{
+				if(local_id_players.count(player.get_id()) == 0)
+				{
+					_zombies.push_back(new Zombie(_shader, player.get_position(), player.get_rotation(), player.get_scale()));
+					_zombies.back()->setId(player.get_id());
+					_zombies.back()->setHealth(player.get_health());
+					_zombies.back()->setFront(player.get_front());
+					_zombies.back()->setMovingForward(player.get_moving_forward());
+					_zombies.back()->setMovingLeft(player.get_moving_left());
+				}
+			}
         }
+    	_ui->setZombies(_zombies);
 
         //Check here if i was not killed.
 
@@ -353,7 +375,14 @@ void Client::onMouseClick(int button, int action, int mods)
 			}
 
 			if(intersection)// TODO send message to server
+			{
+				GameMessage msg;
+            	msg._type = HIT;
+            	msg._game_obj = *_player;
+            	msg._hitPlayer = zombie->getId();
+				message_queue.push(msg);
 				zombie->setHealth(std::max(zombie->getHealth()-0.1f, 0.0f));
+			}
 		}
 
 	}
@@ -409,6 +438,7 @@ void Client::onDraw(double dt)
 
 	for(auto &z : _zombies)
 	{
+		((Zombie*)z)->move(dt);
 		z->draw();
 	}
 

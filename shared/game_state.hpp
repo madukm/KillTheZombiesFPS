@@ -21,7 +21,7 @@ class GameObj
 
     GameObj(int objectId = -1, std::string name_ = "usuario x", glm::vec3 position = {0,1,0}, glm::vec3 rotation = {0,0,0}, glm::vec3 scale = {1,1,1}):
 		_id(objectId), _name(name_), _health(1.0f), 
-		_position(position), _rotation(rotation), _scale(scale), _power(1.0f),
+		_position(position), _rotation(rotation), _scale(scale), _power(0.5f),
 		_fly(false), _front({1,0,0}), _moving_forward(0), _moving_left(0), _type(PLAYER)
     {
 	}
@@ -44,7 +44,7 @@ class GameObj
 
     static GameObj from_json(json parsed_obj)
     {
-		std::cout << parsed_obj << std::endl;
+		//std::cout << parsed_obj << std::endl;
 		int id = parsed_obj["id"];
 		std::string name = parsed_obj["name"];
 		glm::vec3 pos = glm::vec3(parsed_obj["position"][0], parsed_obj["position"][1], parsed_obj["position"][2]);
@@ -90,6 +90,7 @@ class GameObj
 	void decrease_health(const GameObj &hit_player)
 	{
 		_health -= hit_player._power;
+		if(_health<0) _health=0;
 	}
 	
     std::string get_name() { return _name; }

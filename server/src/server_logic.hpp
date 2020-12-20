@@ -24,8 +24,8 @@ class PotentialField
 
 	PotentialField(){}
 	
-	PotentialField(glm::vec2 initial, std::vector<glm::vec2> targets) :
-		_initial(initial), _targets(targets)
+	PotentialField(glm::vec2 initial, std::vector<glm::vec2> targets, std::vector<glm::vec2> zombies) :
+		_initial(initial), _targets(targets), _zombies(zombies)
 	{
 	}
 
@@ -34,27 +34,34 @@ class PotentialField
 	glm::vec2 newDirection()
 
 	{
-		int repulsiveForce = 1;
-		int attractiveForce = 2;
+		int repulsiveForce = 20;
+		int repulsiveForceZombie = 5;
+		int attractiveForce = 10;
 	
 		//Repulsive (Obstacles)
+		glm::vec2 resultantRepulsive = {0,0};
 		std::vector<glm::vec2> obstacleVectors;
 		for(int i=0; i<int(_obstacles.size()); i++)
 		{
 			glm::vec2 vec;
-			vec = _obstacles[i]-_initial;
-			glm::normalize(vec);
+			vec = glm::normalize(_obstacles[i]-_initial);
 			
 			if(glm::length(vec)>0)
 			{
 				vec = vec * -float(repulsiveForce) / glm::length (_obstacles[i]-_initial);
-				obstacleVectors.push_back(vec);
+				resultantRepulsive += vec;
 			}
 		}
-		
-		glm::vec2 resultantRepulsive = {0,0};
-		for(auto &vec : obstacleVectors){
-			resultantRepulsive += vec;
+
+		//Repulsive (Zombie)
+		for(auto zombiePos : _zombies)
+		{
+			glm::vec2 dirVector = glm::normalize(zombiePos - _initial);
+			if(glm::length(dirVector)>0)
+			{
+				glm::vec2 vec = -dirVector * float(repulsiveForceZombie)/ glm::length (zombiePos-_initial);
+				resultantRepulsive += vec;
+			}
 		}
 		
 		//Attractive (Targets)
@@ -69,13 +76,13 @@ class PotentialField
 				target = i;
 			}
 		}
-		glm::vec2 targetVector = _targets[target] - _initial;
+		glm::vec2 targetVector = glm::normalize(_targets[target] - _initial);
 		glm::vec2 resultantAttractive = targetVector * float(attractiveForce);
 
-		glm::vec2 resultant2 = resultantAttractive;// + resultantRepulsive;
+		glm::vec2 resultant2 = resultantAttractive + resultantRepulsive;
 		glm::vec3 resultant = {resultant2.x, resultant2.y, 0};
 
-        _log.log(std::string("Result") + glm::to_string(resultant), DEBUG);
+        //_log.log(std::string("Result") + glm::to_string(resultant), DEBUG);
 		
         return glm::normalize(resultant);
 	}
@@ -85,6 +92,7 @@ class PotentialField
 		glm::vec2 _initial;
 		std::vector<glm::vec2> _obstacles = {{0,50}, {0,-50}, {50,0}, {-50,0}, {-30,40}, {30,40}, {-30,-40}, {30,-40}, {0,0}, {-20,25}, {20,25}, {-20,25},{20,-25}};
 		std::vector<glm::vec2> _targets;
+		std::vector<glm::vec2> _zombies;
 };
 
 Logger PotentialField::_log = Logger("PotentialField");
@@ -161,9 +169,7 @@ class ServerLogic
                             _state.players[received_message._hitPlayer];
                         dead_player.decrease_health(_state.players[received_message._game_obj.get_id()]);
                         if(dead_player.get_health()<=0)
-						{
-							//TODO remove if dead...
-						}
+							_state.players.erase(dead_player.get_id());
                     }
 
                     default:
@@ -173,7 +179,7 @@ class ServerLogic
 
             //If server should zombies position (difficulty).
             curr_time = Clock::now();
-            if (milliseconds(1) <
+            if (milliseconds(10) <
                 std::chrono::duration_cast<milliseconds>(curr_time - prev_time))
             {
                 prev_time = curr_time;
@@ -183,13 +189,14 @@ class ServerLogic
                     int zomb_id;
                     do
                     {
-                        zomb_id = rand() % 100;
+                        zomb_id = rand()%100+100;
                     } while(_state.players.count(zomb_id) != 0);
 
                     GameObj new_zombie(zomb_id);
                     new_zombie.set_as_zombie();
-    				new_zombie.set_position({5,1,5});
+    				new_zombie.set_position({float(rand()%100-50),.5,float(rand()%100-50)});
     				new_zombie.set_front({1,0,0});
+    				new_zombie.set_scale({.5,.5,.5});
     				new_zombie.set_moving_forward(0);
     				new_zombie.set_moving_left(0);
 
@@ -203,12 +210,14 @@ class ServerLogic
                 */
 
     			std::vector<glm::vec2> playersPos;
+    			std::vector<glm::vec2> zombiesPos;
     			for (auto &[id, zombie] : _state.players)
                 {
-    		   		if (!zombie.check_zombie()){
     					glm::vec2 pos = {zombie.get_position().x, zombie.get_position().z};
+    		   		if (!zombie.check_zombie())
     					playersPos.push_back(pos);
-    				}
+					else
+    					zombiesPos.push_back(pos);
     			}
 
                 // Zombies wandering.
@@ -220,15 +229,25 @@ class ServerLogic
                         //Wander
     					if(playersPos.size() > 0){
     						glm::vec2 zombiePos = {zombie.get_position().x, zombie.get_position().z};
-    						_potentialField = PotentialField(zombiePos, playersPos);
+    						_potentialField = PotentialField(zombiePos, playersPos, zombiesPos);
     						glm::vec3 vecDir = {_potentialField.newDirection().x, 0, _potentialField.newDirection().y};
     						zombie.set_front(vecDir);
     						zombie.set_moving_forward(1);
     						zombie.set_moving_left(0);
 
-    						float speed = 5.0f;
+							// Update rotation
+							glm::vec3 basex = glm::vec3(1,0,0);
+							glm::vec3 basey = glm::vec3(0,0,1);
+							float rotAngle = glm::dot(glm::vec3(vecDir), basex)/M_PI*180.0f;
+							if(glm::dot(glm::vec3(vecDir), basey)>0)
+    							zombie.set_rotation(glm::vec3(0.0f,rotAngle,0.0f));
+							else
+    							zombie.set_rotation(glm::vec3(0.0f,-rotAngle-180.0f,0.0f));
+
+							// Update position
+    						float speed = 10.0f;
     						glm::vec3 position = zombie.get_position();
-    						position += vecDir * speed * 0.001f;// TODO calculate dt
+    						position += vecDir * speed * 0.01f;// TODO calculate dt
     						zombie.set_position(position);
                     	}
     					else{

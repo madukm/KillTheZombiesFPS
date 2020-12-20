@@ -50,7 +50,7 @@ class ClientConnector
 
         printf("File descriptor: %d\n", sd);
         //should throw an exception...
-        receive_state_buffer = new char[GameState::buf_size];
+        receive_state_buffer = new char[20000];
         send_message_buffer = new char[GameMessage::buf_size];
 	}
 
@@ -98,25 +98,25 @@ class ClientConnector
 
         //Receive updated values from server.
         //In this implementation, server is always right. (i suppose)
-        int bytes_read = read(sd, receive_state_buffer, GameState::buf_size);
+        int bytes_read = read(sd, receive_state_buffer, 20000);
         //client_connector_logger.log(std::string("Bytes from server: ") + std::to_string(bytes_read));
         if(bytes_read == -1) {
                 printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
         }
 
-        client_connector_logger.log(std::string("Received from server: ") + std::string(receive_state_buffer), log_type::INFO);
+        //client_connector_logger.log(std::string("Received from server: ") + std::string(receive_state_buffer), log_type::INFO);
 
 		json result;
 		try
 		{
 			result = json::parse(receive_state_buffer);
-        	client_connector_logger.log(std::string("Received state: ") + std::string(receive_state_buffer), log_type::INFO);
+        	//client_connector_logger.log(std::string("Received state: ") + std::string(receive_state_buffer), log_type::INFO);
 		}
 		catch(std::exception& e)
 		{
 			// Bad json format
 			//std::cout << e. << std::endl;
-			client_connector_logger.log(std::string("Bad JSON!"), WARN);
+			//client_connector_logger.log(std::string("Bad JSON!"), WARN);
 		}
 
         return result;
