@@ -48,7 +48,6 @@ class Client
 		Semaphore* _sem;
 
 		ClientConnector* _clientConnector;
-		std::thread _update_thread;
 		Logger* _log;
 
 		// Rendering specific
@@ -60,6 +59,10 @@ class Client
 		Camera* _camera;
 		SceneZero* _sceneZero;
 		
+		// Game State data
+    	Semaphore _gameStateSemaphore;
+    	Semaphore _messageSemaphore;
+
         std::unordered_map<int, Object*> _players;
         std::vector<Zombie*> _zombies;
 

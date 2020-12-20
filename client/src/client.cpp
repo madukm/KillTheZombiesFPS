@@ -168,96 +168,27 @@ void Client::messageSender() //This is a thread
 
     while(1)
     {
-		//------------ Send 
-
         //Dequeue from messages.
-        if(!message_queue.empty())
-        {
-            //Do this stuff
-            //_clientConnector.
-			sent_message = message_queue.front();
-			message_queue.pop();
-        }
-        else
-        {
-            sent_message._type = MOVE;
-            sent_message._game_obj = *_player;
-        }
-        _clientConnector->send_game_message(sent_message.to_json());
-
-		//------------ Receive 
-        json j_state = _clientConnector->receive_game_state(); 
-		if(j_state.empty())
-			continue;
-
-        GameState received_state = GameState::from_json(j_state);
-        //_this_player_id = GameState._player_id; //Setting self id.
-
-        std::set<int> local_id_players;
-
-        for (auto player : _players)
-        {
-            local_id_players.insert(player.first);
-        }
-
-		// Clear zombies
-		for(auto& zombie : _zombies)
+		_messageSemaphore.down();
 		{
-			delete zombie;
-		}
-		_zombies.clear();
-        // Update positions and rotations of everybody
-        for (auto [key, player] : received_state.players)
-        {
-            // Add spawned entities.            
-			if(!player.check_zombie())
+			if(!message_queue.empty())
 			{
-				if (local_id_players.count(player.get_id()) == 0)
-				{
-					_players[player.get_id()] = new Survivor(_shader);
-				}
-				else local_id_players.erase(player.get_id());
-
-				Survivor* local_player = (Survivor*)_players[player.get_id()];
-
-				local_player->setPosition(player.get_position());
-				local_player->setRotation(player.get_rotation());
-				local_player->setScale(player.get_scale());
-				local_player->setId(player.get_id());
-				local_player->setHealth(player.get_health());
-				local_player->setPower(player.get_power());
-				local_player->setName(player.get_name());
-
-				local_player->setFly(player.get_fly());
-				local_player->setFront(player.get_front());
-				local_player->setMovingForward(player.get_moving_forward());
-				local_player->setMovingLeft(player.get_moving_left());
+				//Do this stuff
+				//_clientConnector.
+				sent_message = message_queue.front();
+				message_queue.pop();
 			}
 			else
 			{
-				if(local_id_players.count(player.get_id()) == 0)
-				{
-					_zombies.push_back(new Zombie(_shader, player.get_position(), player.get_rotation(), player.get_scale()));
-					_zombies.back()->setId(player.get_id());
-					_zombies.back()->setHealth(player.get_health());
-					_zombies.back()->setFront(player.get_front());
-					_zombies.back()->setMovingForward(player.get_moving_forward());
-					_zombies.back()->setMovingLeft(player.get_moving_left());
-				}
+				sent_message._type = MOVE;
+				sent_message._game_obj = *_player;
 			}
-        }
-    	_ui->setZombies(_zombies);
+		}
+		_messageSemaphore.up();
 
-        //Check here if i was not killed.
+        _clientConnector->send_game_message(sent_message.to_json());
+	}
 
-        // Remove dead entities.
-        for (int dead_player_id : local_id_players)
-        {
-            Object *dead_player_ptr = _players[dead_player_id];
-            delete dead_player_ptr;
-            _players.erase(dead_player_id);
-        }
-    }
 }
 
 void Client::stateReceiver()
@@ -266,6 +197,81 @@ void Client::stateReceiver()
     {
         // Receive state from server and update on client.
         // Parse game state
+        json j_state = _clientConnector->receive_game_state(); 
+		if(j_state.empty())
+			continue;
+
+		_gameStateSemaphore.down();
+		{
+			GameState received_state = GameState::from_json(j_state);
+			//_this_player_id = GameState._player_id; //Setting self id.
+
+			std::set<int> local_id_players;
+
+			for (auto player : _players)
+			{
+				local_id_players.insert(player.first);
+			}
+
+			// Clear zombies
+			for(auto& zombie : _zombies)
+			{
+				delete zombie;
+			}
+			_zombies.clear();
+			// Update positions and rotations of everybody
+			for (auto [key, player] : received_state.players)
+			{
+				// Add spawned entities.            
+				if(!player.check_zombie())
+				{
+					if (local_id_players.count(player.get_id()) == 0)
+					{
+						_players[player.get_id()] = new Survivor(_shader);
+					}
+					else local_id_players.erase(player.get_id());
+
+					Survivor* local_player = (Survivor*)_players[player.get_id()];
+
+					local_player->setPosition(player.get_position());
+					local_player->setRotation(player.get_rotation());
+					local_player->setScale(player.get_scale());
+					local_player->setId(player.get_id());
+					local_player->setHealth(player.get_health());
+					local_player->setPower(player.get_power());
+					local_player->setName(player.get_name());
+
+					local_player->setFly(player.get_fly());
+					local_player->setFront(player.get_front());
+					local_player->setMovingForward(player.get_moving_forward());
+					local_player->setMovingLeft(player.get_moving_left());
+				}
+				else
+				{
+					if(local_id_players.count(player.get_id()) == 0)
+					{
+						_zombies.push_back(new Zombie(_shader, player.get_position(), player.get_rotation(), player.get_scale()));
+						_zombies.back()->setId(player.get_id());
+						_zombies.back()->setHealth(player.get_health());
+						_zombies.back()->setFront(player.get_front());
+						_zombies.back()->setMovingForward(player.get_moving_forward());
+						_zombies.back()->setMovingLeft(player.get_moving_left());
+					}
+				}
+			}
+			_ui->setZombies(_zombies);
+
+			//Check here if i was not killed.
+
+			// Remove dead entities.
+			for (int dead_player_id : local_id_players)
+			{
+				Object *dead_player_ptr = _players[dead_player_id];
+				delete dead_player_ptr;
+				_players.erase(dead_player_id);
+			}
+		}
+		_gameStateSemaphore.up();
     }
 }
 
@@ -380,7 +386,13 @@ void Client::onMouseClick(int button, int action, int mods)
             	msg._type = HIT;
             	msg._game_obj = *_player;
             	msg._hitPlayer = zombie->getId();
-				message_queue.push(msg);
+
+				_messageSemaphore.down();
+				{
+					message_queue.push(msg);
+				}
+				_messageSemaphore.up();
+
 				zombie->setHealth(std::max(zombie->getHealth()-0.1f, 0.0f));
 			}
 		}
@@ -391,60 +403,64 @@ void Client::onMouseClick(int button, int action, int mods)
 void Client::onDraw(double dt)
 {
 	//_clientConnector->updateServerState(_survivors);
-
-	_camera->update(dt);
-	_player->set_position(_camera->getPosition()-glm::vec3(0,0.8,0));
-	_player->set_rotation(_camera->getRotation());
-	_player->set_scale({0.5,0.5,0.5});
-	_player->set_fly(_camera->getFly());
-	_player->set_front(_camera->getFront());
-	_player->set_moving_forward(_camera->getMovingForward());
-	_player->set_moving_left(_camera->getMovingLeft());
-
-	// Clear window
-	glClearColor(0.5f,0.5f,0.8f,1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// Populate view and projection matrices
-	glm::mat4 view = glm::lookAt(glm::vec3(15,15,15), glm::vec3(0,0,0), glm::vec3(0,1,0));
-	glm::mat4 projection = glm::perspective(
-			glm::radians(60.0f),
-			1200.0f/900,
-			0.1f,
-			1000.0f
-		);
-
-	// View matrix
-	glUniformMatrix4fv(_shader->getViewLocation(), 1, GL_FALSE, _camera->getView());
-
-	// Projection matrix
-	glUniformMatrix4fv(_shader->getProjectionLocation(), 1, GL_FALSE, _camera->getProjection());
-
-	// Use shader 0
-	_shader->useShader();
-	_shader->useOnlyTexture();
-	_shader->setProcessLight(true);
-
-	_sceneZero->draw();
-
-	for(auto& p : _players)
+	_gameStateSemaphore.down();
 	{
-		if(((Survivor*)p.second)->getId() == _player->get_id())
-			continue;
+		_camera->update(dt);
+		_player->set_position(_camera->getPosition()-glm::vec3(0,0.8,0));
+		_player->set_rotation(_camera->getRotation());
+		_player->set_scale({0.5,0.5,0.5});
+		_player->set_fly(_camera->getFly());
+		_player->set_front(_camera->getFront());
+		_player->set_moving_forward(_camera->getMovingForward());
+		_player->set_moving_left(_camera->getMovingLeft());
 
-		((Survivor*)p.second)->move(dt);
-		p.second->draw();
+		// Clear window
+		glClearColor(0.5f,0.5f,0.8f,1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Populate view and projection matrices
+		glm::mat4 view = glm::lookAt(glm::vec3(15,15,15), glm::vec3(0,0,0), glm::vec3(0,1,0));
+		glm::mat4 projection = glm::perspective(
+				glm::radians(60.0f),
+				1200.0f/900,
+				0.1f,
+				1000.0f
+			);
+
+		// View matrix
+		glUniformMatrix4fv(_shader->getViewLocation(), 1, GL_FALSE, _camera->getView());
+
+		// Projection matrix
+		glUniformMatrix4fv(_shader->getProjectionLocation(), 1, GL_FALSE, _camera->getProjection());
+
+		// Use shader 0
+		_shader->useShader();
+		_shader->useOnlyTexture();
+		_shader->setProcessLight(true);
+
+		_sceneZero->draw();
+
+		for(auto& p : _players)
+		{
+			if(((Survivor*)p.second)->getId() == _player->get_id())
+				continue;
+
+			((Survivor*)p.second)->move(dt);
+			p.second->draw();
+		}
+
+		for(auto &z : _zombies)
+		{
+			((Zombie*)z)->move(dt);
+			z->draw();
+		}
+
+		_shader->setProcessLight(false);
+		_ui->draw();
+		
+		// Swap buffers
+		_window->swapBuffers();
+
 	}
-
-	for(auto &z : _zombies)
-	{
-		((Zombie*)z)->move(dt);
-		z->draw();
-	}
-
-	_shader->setProcessLight(false);
-	_ui->draw();
-	
-    // Swap buffers
-	_window->swapBuffers();
+	_gameStateSemaphore.up();
 }
