@@ -170,7 +170,10 @@ class ServerLogic
                             _state.players[received_message._hitPlayer];
                         dead_player.decrease_health(_state.players[received_message._game_obj.get_id()]);
                         if(dead_player.get_health()<=0)
+                        {
+                            if (dead_player.check_zombie()) curr_zombie_n--;
 							_state.players.erase(dead_player.get_id());
+                        }
                     }
 
                     default:
