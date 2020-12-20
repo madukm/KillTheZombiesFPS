@@ -44,10 +44,10 @@ class ServerConnector
 		log->log(std::string("Client connected: ") + std::to_string(socket), INFO);
 
         get_message_buf = new char[GameMessage::buf_size];
-        send_state_buf = new char[GameState::buf_size];
+        send_state_buf = new char[20000];
 
-        //get_message_thread = std::thread(&ServerConnector::get_message, this);
-        //send_state_thread = std::thread(&ServerConnector::send_state, this);
+        get_message_thread = std::thread(&ServerConnector::get_message, this);
+        send_state_thread = std::thread(&ServerConnector::send_state, this);
 
         printf("Cliend FD: %d\n", socket);
     }
@@ -107,9 +107,10 @@ class ServerConnector
 		// TODO stop this thread when deleting object
         while (_connected)
         {
-            strncpy(send_state_buf, _update_state.to_json().dump().c_str(), GameState::buf_size-1);
+			std::cout << _update_state.to_json().dump() << std::endl;
+            strncpy(send_state_buf, _update_state.to_json().dump().c_str(), 20000-1);
             log->log(std::string("Sending ") + send_state_buf, DEBUG);
-			int write_size = write(_socket, send_state_buf, GameState::buf_size);
+			int write_size = write(_socket, send_state_buf, 20000);
 			if(write_size<=0)
 			{
 				// Client disconnected

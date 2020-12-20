@@ -29,8 +29,8 @@ class PotentialField{
 	glm::vec2 newDirection()
 
 	{
-		int repulsiveForce = 10;
-		int attractiveForce = 50;
+		int repulsiveForce = 1;
+		int attractiveForce = 2;
 	
 		//Repulsive (Obstacles)
 		std::vector<glm::vec2> obstacleVectors;
@@ -40,8 +40,11 @@ class PotentialField{
 			vec = _obstacles[i]-_initial;
 			glm::normalize(vec);
 			
-			vec = vec * -float(repulsiveForce) / glm::length (_obstacles[i]-_initial);
-			obstacleVectors.push_back(vec);
+			if(glm::length(vec)>0)
+			{
+				vec = vec * -float(repulsiveForce) / glm::length (_obstacles[i]-_initial);
+				obstacleVectors.push_back(vec);
+			}
 		}
 		
 		glm::vec2 resultantRepulsive = {0,0};
@@ -50,7 +53,6 @@ class PotentialField{
 		}
 		
 		//Attractive (Targets)
-		std::cout << glm::to_string(_targets[0]) << std::endl;
 		glm::vec2 temp = (_targets[0]-_initial); 
 		float minDist = glm::length(temp);
 		int target = 0;
@@ -65,8 +67,9 @@ class PotentialField{
 		glm::vec2 targetVector = _targets[target] - _initial;
 		glm::vec2 resultantAttractive = targetVector * float(attractiveForce);
 
-		glm::vec2 resultant2 = resultantAttractive + resultantRepulsive;
+		glm::vec2 resultant2 = resultantAttractive;// + resultantRepulsive;
 		glm::vec3 resultant = {resultant2.x, 0, resultant2.y};
+		std::cout << "Result" << glm::to_string(resultant) << std::endl;
 		return glm::normalize(resultant);
 	}
 	private:
@@ -167,8 +170,13 @@ class ServerLogic
 
                 GameObj new_zombie(zomb_id);
                 new_zombie.set_as_zombie();
+				new_zombie.set_position({5,1,5});
+				new_zombie.set_front({1,0,0});
+				new_zombie.set_moving_forward(0);
+				new_zombie.set_moving_left(0);
 
                 _state.players.insert(std::make_pair(zomb_id, new_zombie));
+				curr_zombie_n++;
             }
 
 			std::vector<glm::vec2> playersPos;
@@ -192,9 +200,17 @@ class ServerLogic
 						glm::vec3 vecDir = {_potentialField->newDirection().x, 0, _potentialField->newDirection().y};
 						zombie.set_front(vecDir);
 						zombie.set_moving_forward(1);
+						zombie.set_moving_left(0);
+
+						float speed = 5.0f;
+						glm::vec3 position = zombie.get_position();
+						position += vecDir * speed * 0.001f;// TODO calculate dt
+						zombie.set_position(position);
                 	}
 					else{
+						zombie.set_front({1,0,0});
 						zombie.set_moving_forward(0);
+						zombie.set_moving_left(0);
 					}
 				}
             }

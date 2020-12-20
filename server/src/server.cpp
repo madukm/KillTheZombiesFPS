@@ -13,7 +13,7 @@
 void listen_connections();
 void remove_disconnected_clients();
 
-ServerLogic _logic(10);
+ServerLogic _logic(2);
 int incoming_descriptor, temp_descriptor; //Connection descriptor on newly created connection.
 struct sockaddr_in incoming_addr;
 socklen_t addr_size;

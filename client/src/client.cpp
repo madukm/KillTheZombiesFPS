@@ -30,7 +30,8 @@ Client::Client()
 
     // Connection bootstraping
     //TODO add config file.
-	_clientConnector = new ClientConnector(1338, "18.218.11.188");
+	//_clientConnector = new ClientConnector(1338, "18.218.11.188");
+	_clientConnector = new ClientConnector(1338, "127.0.0.1");
     _this_player_id = _clientConnector->send_init_sequence("maoe");
     _player = new GameObj();
 

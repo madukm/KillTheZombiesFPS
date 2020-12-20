@@ -104,19 +104,19 @@ class ClientConnector
                 printf("Oh dear, something went wrong with read()! %s\n", strerror(errno));
         }
 
-        //client_connector_logger.log(std::string("Received from server: ") + std::string(receive_state_buffer), log_type::INFO);
+        client_connector_logger.log(std::string("Received from server: ") + std::string(receive_state_buffer), log_type::INFO);
 
 		json result;
 		try
 		{
 			result = json::parse(receive_state_buffer);
-        	//client_connector_logger.log(std::string("Received state: ") + std::string(receive_state_buffer), log_type::INFO);
+        	client_connector_logger.log(std::string("Received state: ") + std::string(receive_state_buffer), log_type::INFO);
 		}
 		catch(std::exception& e)
 		{
 			// Bad json format
 			//std::cout << e. << std::endl;
-			//client_connector_logger.log(std::string("Bad JSON!"), WARN);
+			client_connector_logger.log(std::string("Bad JSON!"), WARN);
 		}
 
         return result;

@@ -19,7 +19,7 @@ class GameMessage
 {
     public:
 
-    static const int buf_size = 1000;
+    static const int buf_size = 20000;
 
 	GameMessage()
 	{}
