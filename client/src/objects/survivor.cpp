@@ -39,7 +39,7 @@ void Survivor::move(float dt)
 		planeFront = glm::normalize(planeFront);
 	}
 
-	float speed = 50.0f;
+	float speed = 20.0f;
 	_position += planeFront* (speed*_movingForward) * dt;
 	_position += glm::normalize(glm::cross(_front, glm::vec3(0,1,0)))* (speed*_movingLeft) * dt;
 

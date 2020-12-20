@@ -55,7 +55,6 @@ class GameMessage
 		
 		if(_type == MOVE){
 			//ret["game_obj"] = _game_obj.to_json();
-			;			
 		}
 		if(_type == HIT){
 			ret["hitPlayer"] = _hitPlayer;
