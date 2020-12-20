@@ -14,9 +14,11 @@ class ServerLogic
 {
 	public:
  
-    ServerLogic()
+    ServerLogic(int zombie_n) :
+        _max_zombie_n(zombie_n)
     {
 		_log = new Logger("ServerLogic");
+        curr_zombie_n = 0;
 	}
 
     ~ServerLogic()
@@ -58,6 +60,7 @@ class ServerLogic
                     {
                         GameObj &temp_obj = 
                             _state.players[received_message._game_obj.get_id()];
+
                         temp_obj.set_position(received_message._game_obj.get_position());
                         temp_obj.set_rotation(received_message._game_obj.get_rotation());
                         temp_obj.set_scale(received_message._game_obj.get_scale());
@@ -73,25 +76,43 @@ class ServerLogic
                     }
 
                     case HIT:
-                        //Encontrou no state
-                        //MAtou alguem.
-                        //killed_ids.push_back(iddequemmooreu);
+                    {
+                        GameObj &dead_player =
+                            _state.players[received_message._hitPlayer];
+                        dead_player.decrease_health(_state.players[received_message._game_obj.get_id()]);
+                        //TODO remove if dead...
+                    }
 
                     default:
                         break;
                 }
             }
 
-            //spawn zombies.
-            //altera gamestate
-            
-            //notifica os clientes.
-            for (auto client : active_clients)
+            // Spawn zombies.
+            if (curr_zombie_n < _max_zombie_n)
             {
-                //notify client
-                GameState temp_state;
-                //temp_state._player_id = client.first;
-                //client.second->_update_queue.push();
+                int zomb_id;
+                do
+                {
+                    zomb_id = rand() % 100;
+                } while(_state.players.count(zomb_id) != 0);
+
+                GameObj new_zombie(zomb_id);
+                new_zombie.set_as_zombie();
+
+                _state.players.insert(std::make_pair(zomb_id, new_zombie));
+            }
+
+            // Zombies wandering.
+            for (auto &[id, zombie] : _state.players)
+            {
+                if (zombie.check_zombie())
+                {
+                    //Wander
+                    zombie.move_offset(glm::vec3(rand()%10/10,
+                                                 rand()%10/10,
+                                                 rand()%10/10));
+                }
             }
         }
     }
@@ -149,6 +170,9 @@ class ServerLogic
     std::unordered_map<int, ServerConnector*> active_clients;
     std::queue<GameMessage> message_queue; //kiwi
     Semaphore message_queue_semaphore;
+    const int _max_zombie_n;
+    int curr_zombie_n;
     GameState _state;
 	Logger* _log;
 };
+

@@ -11,9 +11,8 @@ using json = nlohmann::json;
 
 enum obj_type
 {
-	PLAYER,
-    ZOMBIE,
-    EXTRA //Gift boxes.
+	PLAYER = 0,
+    ZOMBIE
 };
 
 class GameObj
@@ -40,6 +39,7 @@ class GameObj
         _front = copied._front;
         _moving_forward = copied._moving_forward;
         _moving_left = copied._moving_left;
+        _type = copied._type;
     }
 
     static GameObj from_json(json parsed_obj)
@@ -58,6 +58,8 @@ class GameObj
         ret._front = glm::vec3(parsed_obj["front"][0], parsed_obj["front"][1], parsed_obj["front"][2]);
 		ret._moving_forward = parsed_obj["moving_forward"];
         ret._moving_left = parsed_obj["moving_left"];
+
+        ret._type = parsed_obj["type"];
 
         return ret;
     }
@@ -79,12 +81,14 @@ class GameObj
 		ret["moving_forward"] = _moving_forward;
 		ret["moving_left"] = _moving_left;
 		
+        ret["type"] = _type;
+
 		return ret;
     }
 	
 	void decrease_health(const GameObj &hit_player)
 	{
-		_health -= hit_player._health;
+		_health -= hit_player._power;
 	}
 	
     std::string get_name() { return _name; }
@@ -120,6 +124,28 @@ class GameObj
 	int get_moving_left() { return _moving_left; }
     void set_moving_left(int moving_left) { _moving_left = moving_left; }
 
+    void move_offset(glm::vec3 offset)
+    {
+        // Increment every axis with given val.
+        _position += offset;
+    }
+
+    void set_as_player()
+    {
+        _type = PLAYER; 
+    }
+
+    void set_as_zombie()
+    {
+        _type = ZOMBIE;
+    }
+
+    bool check_zombie()
+    {
+        if (_type == ZOMBIE) return true;
+        return false;
+    }
+
 private:
     int _id;
 	std::string _name;
@@ -135,7 +161,7 @@ private:
 	int _moving_forward;
 	int _moving_left;
 	
-    //obj_type type;
+    obj_type _type;
 };
 
 class GameState

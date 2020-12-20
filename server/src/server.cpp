@@ -13,7 +13,7 @@
 void listen_connections();
 void remove_disconnected_clients();
 
-ServerLogic _logic;
+ServerLogic _logic(10);
 int incoming_descriptor, temp_descriptor; //Connection descriptor on newly created connection.
 struct sockaddr_in incoming_addr;
 socklen_t addr_size;
@@ -39,15 +39,17 @@ int main()
 
     std::thread listen_connections_t(listen_connections);
     std::thread remove_disconnected_clients_t(remove_disconnected_clients);
+    std::thread logic_run(&ServerLogic::run, &_logic);
 
-    while(1) //Listen for connections.
+    std::string dummy_line;
+    //while(std::getline(std::cin, dummy_line))
+    while(std::cin >> dummy_line)
     {
-		_logic.run();
-    }
+        std::cout << dummy_line << std::endl;
+    }//wait for ctrl-d (EOF)
 
-	listen_connections_t.join();
+    listen_connections_t.join();
 	remove_disconnected_clients_t.join();
-
 
 	// TODO ServerLogic run
 
