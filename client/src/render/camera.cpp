@@ -19,7 +19,7 @@ Camera::Camera(float windowRatio):
 	_up = {0,1,0};
 	_front = {0,0,-1};
 
-	_speed = 60;
+	_speed = 20;
 
 	_yaw = -90;
 	_pitch = 0;
@@ -125,6 +125,12 @@ void Camera::update(double dt)
 	// Move only if not colliding
 	if(detectCollision(nextPos) == false)
 		_position = nextPos;
+	else
+	{
+		glm::vec3 impulse = glm::normalize(nextPos-_position);
+		if(glm::length(impulse)>0)
+			_position = _position - impulse;
+	}
 
 	_view = glm::lookAt(_position, _position+_front, _up);
 	_projection = glm::perspective(
@@ -198,22 +204,22 @@ bool Camera::detectCollision(glm::vec3 position)
 		glm::mat4 model = block->getModelMat();
 		CollisionBox blockBox = {
 			block->getScale()/2.0f,
-			glm::vec3(model[0][0], model[1][0], model[2][0]),
-			glm::vec3(model[0][1], model[1][1], model[2][1]),
-			glm::vec3(model[0][2], model[1][2], model[2][2])
+			glm::normalize(glm::vec3(model[0][0], model[1][0], model[2][0])),
+			glm::normalize(glm::vec3(model[0][1], model[1][1], model[2][1])),
+			glm::normalize(glm::vec3(model[0][2], model[1][2], model[2][2]))
 		};
 
 		// Player collision box info
 		glm::mat4 modelCamera = _player->getModelMat();
 		CollisionBox playerBox = {
 			glm::vec3(1,1,1)/2.0f,
-			glm::vec3(modelCamera[0][0], modelCamera[1][0], modelCamera[2][0]),
-			glm::vec3(modelCamera[0][1], modelCamera[1][1], modelCamera[2][1]),
-			glm::vec3(modelCamera[0][2], modelCamera[1][2], modelCamera[2][2])
+			glm::normalize(glm::vec3(modelCamera[0][0], modelCamera[1][0], modelCamera[2][0])),
+			glm::normalize(glm::vec3(modelCamera[0][1], modelCamera[1][1], modelCamera[2][1])),
+			glm::normalize(glm::vec3(modelCamera[0][2], modelCamera[1][2], modelCamera[2][2]))
 		};
-		std::cout << "---------------------- BLOCK ---------------------- " << std::endl;
-		std::cout << glm::to_string(blockBox.size) << std::endl;
-		std::cout << glm::to_string(position) << std::endl;
+		//std::cout << "---------------------- BLOCK ---------------------- " << std::endl;
+		//std::cout << glm::to_string(blockBox.size) << std::endl;
+		//std::cout << glm::to_string(position) << std::endl;
 
 		// Vector between the two centres
 		glm::vec3 toCenter = position - _position;
@@ -254,22 +260,27 @@ bool Camera::detectCollision(glm::vec3 position)
 
 float transformToAxis(CollisionBox box, glm::vec3 axis)
 {
+	//std::cout << "X: " << box.size.x * fabs(glm::dot(axis, box.axis0)) << "|| dot: " << fabs(glm::dot(axis, box.axis0)) << std::endl;
     return
-        box.size.x * abs(glm::dot(axis, box.axis0)) +
-        box.size.y * abs(glm::dot(axis, box.axis1)) +
-        box.size.z * abs(glm::dot(axis, box.axis2));
+        box.size.x * fabs(glm::dot(axis, glm::normalize(box.axis0))) +
+        box.size.y * fabs(glm::dot(axis, glm::normalize(box.axis1))) +
+        box.size.z * fabs(glm::dot(axis, glm::normalize(box.axis2)));
 }
 
 bool overlapOnAxis(CollisionBox one, CollisionBox two, glm::vec3 axis, glm::vec3 toCenter)
 {
+	if(glm::length(axis)==0 || glm::length(toCenter)==0)
+		return true;
+
+	axis = glm::normalize(axis);
+	//std::cout << "----------" << std::endl;
     // Project the half-size of one onto axis
     float oneProject = transformToAxis(one, axis);
     float twoProject = transformToAxis(two, axis);
 
     // Project this onto the axis
-    float distance = abs(glm::dot(toCenter, axis));
+    float distance = fabs(glm::dot(toCenter, axis));
 
-	std::cout << "----------" << std::endl;
 	//std::cout << "One" << std::endl;
 	//std::cout << "0: " << glm::to_string(one.axis0) << std::endl;
 	//std::cout << "1: " << glm::to_string(one.axis1) << std::endl;
@@ -280,14 +291,14 @@ bool overlapOnAxis(CollisionBox one, CollisionBox two, glm::vec3 axis, glm::vec3
 	//std::cout << "2: " << glm::to_string(two.axis2) << std::endl;
 	//std::cout << "Axis " << glm::to_string(axis) << std::endl;
 
-	std::cout << "One Proj " << oneProject << std::endl;
-	std::cout << "Two Proj " << twoProject << std::endl;
-	std::cout << "ToCenter " << glm::to_string(toCenter) << std::endl;
-	std::cout << "Distance " << distance << std::endl;
+	//std::cout << "One Proj " << oneProject << std::endl;
+	//std::cout << "Two Proj " << twoProject << std::endl;
+	//std::cout << "ToCenter " << glm::to_string(toCenter) << std::endl;
+	//std::cout << "Distance " << distance << std::endl;
 	//std::cout << distance << " <= " << oneProject << " + " << twoProject << std::endl;
 	if((distance <= oneProject + twoProject) == false)
 	{
-		std::cout << "Not colliding" << std::endl;
+		//std::cout << "Not colliding" << std::endl;
 	}
 
     // Check for overlap

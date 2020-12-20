@@ -22,7 +22,7 @@ class GameObj
     GameObj(int objectId = -1, std::string name_ = "usuario x", glm::vec3 position = {0,1,0}, glm::vec3 rotation = {0,0,0}, glm::vec3 scale = {1,1,1}):
 		_id(objectId), _name(name_), _health(1.0f), 
 		_position(position), _rotation(rotation), _scale(scale), _power(1.0f),
-		_fly(false), _front({1,0,0}), _moving_forward(0), _moving_left(0)
+		_fly(false), _front({1,0,0}), _moving_forward(0), _moving_left(0), _type(PLAYER)
     {
 	}
 
@@ -44,6 +44,7 @@ class GameObj
 
     static GameObj from_json(json parsed_obj)
     {
+		std::cout << parsed_obj << std::endl;
 		int id = parsed_obj["id"];
 		std::string name = parsed_obj["name"];
 		glm::vec3 pos = glm::vec3(parsed_obj["position"][0], parsed_obj["position"][1], parsed_obj["position"][2]);
@@ -81,7 +82,7 @@ class GameObj
 		ret["moving_forward"] = _moving_forward;
 		ret["moving_left"] = _moving_left;
 		
-        ret["type"] = _type;
+        ret["type"] = (int)_type;
 
 		return ret;
     }
@@ -123,6 +124,9 @@ class GameObj
 
 	int get_moving_left() { return _moving_left; }
     void set_moving_left(int moving_left) { _moving_left = moving_left; }
+
+	int get_type() { return _type; }
+    void set_type(int type) { _type = (obj_type) type; }
 
     void move_offset(glm::vec3 offset)
     {

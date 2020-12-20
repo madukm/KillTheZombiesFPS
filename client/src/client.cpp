@@ -214,7 +214,6 @@ void Client::messageSender() //This is a thread
             local_player->setPosition(player.get_position());
             local_player->setRotation(player.get_rotation());
             local_player->setScale(player.get_scale());
-			std::cout << glm::to_string(local_player->getScale()) << std::endl;
             local_player->setId(player.get_id());
             local_player->setHealth(player.get_health());
             local_player->setPower(player.get_power());
