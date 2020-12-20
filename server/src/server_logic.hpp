@@ -1,5 +1,6 @@
 #define GLM_SWIZZLE
 #define GLM_ENABLE_EXPERIMENTAL
+
 #include "../../shared/game_state.hpp"
 #include "../../shared/game_message.hpp"
 #include "server_connector.hpp"
@@ -7,14 +8,18 @@
 #include "../../shared/logger.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
-#include <queue>
 
+#include <queue>
+#include <chrono>
 
 /* Server logic:
  *
  * */
+typedef std::chrono::high_resolution_clock Clock;
+typedef std::chrono::milliseconds milliseconds;
 
-class PotentialField{
+class PotentialField
+{
 	public:
 
 	PotentialField(){}
@@ -68,15 +73,21 @@ class PotentialField{
 		glm::vec2 resultantAttractive = targetVector * float(attractiveForce);
 
 		glm::vec2 resultant2 = resultantAttractive;// + resultantRepulsive;
-		glm::vec3 resultant = {resultant2.x, 0, resultant2.y};
-		std::cout << "Result" << glm::to_string(resultant) << std::endl;
-		return glm::normalize(resultant);
+		glm::vec3 resultant = {resultant2.x, resultant2.y, 0};
+
+        _log.log(std::string("Result") + glm::to_string(resultant), DEBUG);
+		
+        return glm::normalize(resultant);
 	}
+        static Logger _log;
+
 	private:
 		glm::vec2 _initial;
 		std::vector<glm::vec2> _obstacles = {{0,50}, {0,-50}, {50,0}, {-50,0}, {-30,40}, {30,40}, {-30,-40}, {30,-40}, {0,0}, {-20,25}, {20,25}, {-20,25},{20,-25}};
-		std::vector<glm::vec2> _targets;	
+		std::vector<glm::vec2> _targets;
 };
+
+Logger PotentialField::_log = Logger("PotentialField");
 
 class ServerLogic
 {
@@ -107,6 +118,7 @@ class ServerLogic
     {
         GameMessage received_message;
         bool new_message;
+        Clock::time_point prev_time = Clock::now(), curr_time;
 
         while(1)
         {
@@ -159,60 +171,73 @@ class ServerLogic
                 }
             }
 
-            // Spawn zombies.
-            if (curr_zombie_n < _max_zombie_n)
+            //If server should zombies position (difficulty).
+            curr_time = Clock::now();
+            if (milliseconds(1) <
+                std::chrono::duration_cast<milliseconds>(curr_time - prev_time))
             {
-                int zomb_id;
-                do
+                prev_time = curr_time;
+                // Spawn zombies.
+                if (curr_zombie_n < _max_zombie_n)
                 {
-                    zomb_id = rand() % 100;
-                } while(_state.players.count(zomb_id) != 0);
+                    int zomb_id;
+                    do
+                    {
+                        zomb_id = rand() % 100;
+                    } while(_state.players.count(zomb_id) != 0);
 
-                GameObj new_zombie(zomb_id);
-                new_zombie.set_as_zombie();
-				new_zombie.set_position({5,1,5});
-				new_zombie.set_front({1,0,0});
-				new_zombie.set_moving_forward(0);
-				new_zombie.set_moving_left(0);
+                    GameObj new_zombie(zomb_id);
+                    new_zombie.set_as_zombie();
+    				new_zombie.set_position({5,1,5});
+    				new_zombie.set_front({1,0,0});
+    				new_zombie.set_moving_forward(0);
+    				new_zombie.set_moving_left(0);
 
-                _state.players.insert(std::make_pair(zomb_id, new_zombie));
-				curr_zombie_n++;
-            }
+                    _state.players.insert(std::make_pair(zomb_id, new_zombie));
+    				curr_zombie_n++;
+                }
 
-			std::vector<glm::vec2> playersPos;
-			for (auto &[id, zombie] : _state.players)
-            {
-		   		if (!zombie.check_zombie()){
-					glm::vec2 pos = {zombie.get_position().x, zombie.get_position().z};
-					playersPos.push_back(pos);
-				}
-			}
-            // Zombies wandering.
-            for (auto &[id, zombie] : _state.players)
-            {
-		    
-                if (zombie.check_zombie())
+
+                /*  The following logic is a simple IA so the 
+                    game is not boring.
+                */
+
+    			std::vector<glm::vec2> playersPos;
+    			for (auto &[id, zombie] : _state.players)
                 {
-                    //Wander
-					if(playersPos.size() > 0){
-						glm::vec2 zombiePos = {zombie.get_position().x, zombie.get_position().z};
-						_potentialField = new PotentialField(zombiePos, playersPos);
-						glm::vec3 vecDir = {_potentialField->newDirection().x, 0, _potentialField->newDirection().y};
-						zombie.set_front(vecDir);
-						zombie.set_moving_forward(1);
-						zombie.set_moving_left(0);
+    		   		if (!zombie.check_zombie()){
+    					glm::vec2 pos = {zombie.get_position().x, zombie.get_position().z};
+    					playersPos.push_back(pos);
+    				}
+    			}
 
-						float speed = 5.0f;
-						glm::vec3 position = zombie.get_position();
-						position += vecDir * speed * 0.001f;// TODO calculate dt
-						zombie.set_position(position);
-                	}
-					else{
-						zombie.set_front({1,0,0});
-						zombie.set_moving_forward(0);
-						zombie.set_moving_left(0);
-					}
-				}
+                // Zombies wandering.
+                for (auto &[id, zombie] : _state.players)
+                {
+    		    
+                    if (zombie.check_zombie())
+                    {
+                        //Wander
+    					if(playersPos.size() > 0){
+    						glm::vec2 zombiePos = {zombie.get_position().x, zombie.get_position().z};
+    						_potentialField = PotentialField(zombiePos, playersPos);
+    						glm::vec3 vecDir = {_potentialField.newDirection().x, 0, _potentialField.newDirection().y};
+    						zombie.set_front(vecDir);
+    						zombie.set_moving_forward(1);
+    						zombie.set_moving_left(0);
+
+    						float speed = 5.0f;
+    						glm::vec3 position = zombie.get_position();
+    						position += vecDir * speed * 0.001f;// TODO calculate dt
+    						zombie.set_position(position);
+                    	}
+    					else{
+    						zombie.set_front({1,0,0});
+    						zombie.set_moving_forward(0);
+    						zombie.set_moving_left(0);
+    					}
+    				}
+                }
             }
 		}
     }
@@ -267,7 +292,7 @@ class ServerLogic
 
     private:
 	
-	PotentialField *_potentialField; 
+	PotentialField _potentialField;
     std::unordered_map<int, ServerConnector*> active_clients;
     std::queue<GameMessage> message_queue; //kiwi
     Semaphore message_queue_semaphore;
