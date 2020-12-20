@@ -272,16 +272,16 @@ class ServerLogic
         // Wait for client name, and send client ID.
         read(new_client_descriptor, buf, 40); //read(_socket, get_message_buf, GameMessage::buf_size);
         incoming_j_obj = json::parse(buf);
-        _log->log(std::string("New player enters the ring: ")
-            + std::string(incoming_j_obj["name"]));
+
+        _log->log(std::string("Player init sequence: ") + incoming_j_obj.dump());
 
         outgoing_j_obj["your_id"] = new_client_descriptor;
+
         strncpy(buf, outgoing_j_obj.dump().c_str(), 40);
         write(new_client_descriptor, buf, 40);
 
         GameObj added_player = GameObj (new_client_descriptor, 
                                         incoming_j_obj["name"]);
-        _state.players.insert(std::make_pair(new_client_descriptor, added_player));
 
         temp_new_client = new ServerConnector(new_client_descriptor,
                                               message_queue,
@@ -290,6 +290,10 @@ class ServerLogic
                                               _state);
         
         active_clients[new_client_descriptor] = temp_new_client;
+
+        state_semaphore.down();
+        _state.players.insert(std::make_pair(new_client_descriptor, added_player));
+        state_semaphore.up();
     }
 
 	void delete_disconnected()

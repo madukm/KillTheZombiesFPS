@@ -69,6 +69,7 @@ class ServerConnector
 		close(_socket);
 	}
 
+/*
     // Get and enqueue message from client.
     void get_message()
     {
@@ -114,7 +115,7 @@ class ServerConnector
             _state_semaphore.down();
 			std::cout << _update_state.to_json().dump() << std::endl;
             strncpy(send_state_buf, _update_state.to_json().dump().c_str(), 20000-1);
-            log->log(std::string("Sending ") + send_state_buf, DEBUG);
+            //log->log(std::string("Sending ") + send_state_buf, DEBUG);
 			int write_size = write(_socket, send_state_buf, 20000);
 			if(write_size<=0)
 			{
@@ -126,7 +127,7 @@ class ServerConnector
         	std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
-
+*/
     // Update function.
     void update()
     {
@@ -175,7 +176,7 @@ class ServerConnector
                 _connected = false;
             }
             _state_semaphore.up();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 

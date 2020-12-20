@@ -32,6 +32,7 @@ class Client
         // Server connection
         void messageSender();
         void stateReceiver();
+        void update();
 
 	private:
 		void loadAssets();

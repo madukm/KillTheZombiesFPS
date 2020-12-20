@@ -71,8 +71,9 @@ class ClientConnector
         strncpy(buf, j_message.dump().c_str(), 39);
         printf("Init sequence: %s\n", buf);
         write(sd, buf, 40); 
-        printf("Rec init sequence: %s\n", buf);
+
         read(sd, buf,  40);
+        printf("Rec init sequence: %s\n", buf);
  
         return json::parse(buf)["your_id"];
     }
